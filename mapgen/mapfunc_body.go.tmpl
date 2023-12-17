@@ -1,0 +1,7 @@
+result := {{ outputStructType }}{}
+
+{{ range fields }}
+    result.{{ .field }} = {{ input }}.{{  .field }}
+{{ end }}
+
+return result

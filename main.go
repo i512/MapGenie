@@ -136,7 +136,7 @@ func b(To) From {
 }
 
 // FromToTo map this pls
-func FromToTo(from From, to To) To {
+func FromToTo(a From) (b To) {
 	return To{}
 }
 
