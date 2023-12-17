@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/ast"
+	"go/parser"
+	"go/printer"
 	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
@@ -14,7 +17,7 @@ import (
 )
 
 const mapTemplate = `
-func f(input {{ .InputType }}) {{ .OutputType }} {
+func (input {{ .InputType }}) {{ .OutputType }} {
 	result := {{ .OutputType }}{}
 
 	{{ range .Fields }}
@@ -112,10 +115,21 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, pkg *packages.Package) 
 		}
 
 		t := template.Must(template.New("map").Parse(mapTemplate))
-		err = t.Execute(os.Stdout, data)
-		fmt.Println(err)
+		funcSource := bytes.NewBuffer(nil)
+		err = t.Execute(funcSource, data)
+		if err != nil {
+			panic(err)
+		}
 
+		fmt.Println(funcSource.String())
 		fmt.Println("mappable: ", mappable)
+
+		funcAst, err := parser.ParseExpr(funcSource.String())
+		if err != nil {
+			panic(err)
+		}
+
+		printer.Fprint(os.Stdout, token.NewFileSet(), funcAst)
 
 		return true
 	})
