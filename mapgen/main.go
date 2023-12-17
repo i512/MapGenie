@@ -85,6 +85,8 @@ func main() {
 func analyzePkgFile(fset *token.FileSet, file *ast.File, pkg *packages.Package) {
 	regex := regexp.MustCompile(`^(?:\w+) map this pls`)
 
+	replaced := false
+
 	astutil.Apply(file, nil, func(cursor *astutil.Cursor) bool {
 		funcDecl, ok := cursor.Node().(*ast.FuncDecl)
 		if !ok {
@@ -124,15 +126,26 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, pkg *packages.Package) 
 		fmt.Println(funcSource.String())
 		fmt.Println("mappable: ", mappable)
 
-		funcAst, err := parser.ParseExpr(funcSource.String())
+		replacementFile := pkg.Name + "_" + funcDecl.Name.Name + "_replacement.go"
+		fmt.Println(replacementFile)
+		funcAst, err := parser.ParseExprFrom(fset, replacementFile, funcSource.String(), 0)
 		if err != nil {
 			panic(err)
 		}
 
-		printer.Fprint(os.Stdout, token.NewFileSet(), funcAst)
+		funcDecl.Body = funcAst.(*ast.FuncLit).Body
+
+		replaced = true
 
 		return true
 	})
+
+	if replaced {
+		err := printer.Fprint(os.Stdout, fset, file)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
 
 var ErrFuncMismatchError = fmt.Errorf("function is not mappable")
