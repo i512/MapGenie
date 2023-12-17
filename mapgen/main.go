@@ -12,16 +12,16 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
 	"os"
+	"reflect"
 	"regexp"
 	"text/template"
 )
 
 const mapTemplate = `
 func (input {{ .InputType }}) {{ .OutputType }} {
-	result := {{ .OutputType }}{}
+	var result {{ .OutputType }}
 
-	{{ range .Fields }}
-	result.{{ .Name }} = input.{{  .Name }}
+	{{ range .Fields }}result.{{ .Name }} = {{ $.InputVar }}.{{ .Name }}
 	{{ end }}
 
 	return result
@@ -34,12 +34,14 @@ type Field struct {
 
 type MapTemplateData struct {
 	InputType  string
+	InputVar   string
 	OutputType string
 	Fields     []Field
 }
 
 type TargetFuncSignature struct {
 	InType, OutType     types.Object
+	InVar               string
 	InStruct, OutStruct *types.Struct
 }
 
@@ -76,13 +78,14 @@ func main() {
 		fmt.Println("analysis of pkg:", pkg.Name)
 
 		fmt.Println(pkg.ID, pkg.GoFiles)
-		for _, file := range pkg.Syntax {
-			analyzePkgFile(pkg.Fset, file, pkg)
+		for i, file := range pkg.Syntax {
+			filePath := pkg.GoFiles[i]
+			analyzePkgFile(pkg.Fset, file, filePath, pkg)
 		}
 	}
 }
 
-func analyzePkgFile(fset *token.FileSet, file *ast.File, pkg *packages.Package) {
+func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *packages.Package) {
 	regex := regexp.MustCompile(`^(?:\w+) map this pls`)
 
 	replaced := false
@@ -112,6 +115,7 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, pkg *packages.Package) 
 
 		data := MapTemplateData{
 			InputType:  tfs.InType.Name(),
+			InputVar:   tfs.InVar,
 			OutputType: tfs.OutType.Name(),
 			Fields:     mappable,
 		}
@@ -141,7 +145,13 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, pkg *packages.Package) 
 	})
 
 	if replaced {
-		err := printer.Fprint(os.Stdout, fset, file)
+		f, err := os.OpenFile(filePath, os.O_RDWR|os.O_TRUNC, 0755)
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = printer.Fprint(f, fset, file)
 		if err != nil {
 			panic(err)
 		}
@@ -187,6 +197,7 @@ func getInputOutputTypes(f *ast.FuncDecl, pkg *packages.Package) (tfs TargetFunc
 
 	tfs = TargetFuncSignature{
 		InType:    inputType,
+		InVar:     paramList[0].Names[0].Name,
 		OutType:   resultType,
 		InStruct:  structArg,
 		OutStruct: resultStruct,
@@ -201,12 +212,6 @@ func getStructFieldMap(s *types.Struct, pkg *packages.Package) map[string]types.
 	for i := 0; i < s.NumFields(); i++ {
 		f := s.Field(i)
 		result[f.Name()] = f.Type()
-
-		if bt, ok := f.Type().Underlying().(*types.Basic); ok {
-			if (bt.Info() & types.IsInteger) == types.IsInteger {
-				fmt.Println("found integer", f.Name())
-			}
-		}
 	}
 
 	return result
@@ -222,7 +227,7 @@ func mappableFields(in, out map[string]types.Type) []Field {
 			continue
 		}
 
-		if inMapType != outMapType {
+		if !reflect.DeepEqual(inMapType, outMapType) {
 			fmt.Println("different field types ", outMapField)
 			continue
 		}

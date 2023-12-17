@@ -109,17 +109,21 @@ func main() {
 }
 
 type From struct {
-	A int
-	B string
-	c int
-	D []byte
+	A	int
+	B	string
+	c	int
+	D	[]byte
+	E	[]int
+	F	float64
 }
 
 type To struct {
-	Other int
-	A     int
-	B     string
-	D     []byte
+	Other	int
+	A	int
+	B	string
+	D	[]byte
+	E	[]int
+	F	float64
 }
 
 // Bluh bluh
@@ -137,7 +141,28 @@ func b(To) From {
 
 // FromToTo map this pls
 func FromToTo(a From) (b To) {
-	return To{}
+	var result To
+
+	result.A = a.A
+	result.B = a.B
+	result.D = a.D
+	result.E = a.E
+	result.F = a.F
+
+	return result
+}
+
+// FromFromToTo map this pls
+func FromFromToTo(a To) (b From) {
+	var result From
+
+	result.D = a.D
+	result.E = a.E
+	result.F = a.F
+	result.A = a.A
+	result.B = a.B
+
+	return result
 }
 
 func c(From) To {
