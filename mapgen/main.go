@@ -40,7 +40,7 @@ type MapTemplateData struct {
 }
 
 type TargetFuncSignature struct {
-	InType, OutType     types.Object
+	InType, OutType     string
 	InVar               string
 	InStruct, OutStruct *types.Struct
 }
@@ -118,9 +118,9 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 		mappable := mappableFields(inMap, outMap)
 
 		data := MapTemplateData{
-			InputType:  tfs.InType.Name(),
+			InputType:  tfs.InType,
 			InputVar:   tfs.InVar,
-			OutputType: tfs.OutType.Name(),
+			OutputType: tfs.OutType,
 			Fields:     mappable,
 		}
 
@@ -165,44 +165,34 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 var ErrFuncMismatchError = fmt.Errorf("function is not mappable")
 
 func getInputOutputTypes(f *ast.FuncDecl, pkg *packages.Package) (tfs TargetFuncSignature, err error) {
-	paramList := f.Type.Params.List
-	if len(paramList) != 1 {
+	funcType := pkg.Types.Scope().Lookup(f.Name.Name)
+
+	signature := funcType.Type().(*types.Signature)
+	if signature.Params().Len() != 1 {
 		return tfs, fmt.Errorf("%w: wrong number of arguments", ErrFuncMismatchError)
 	}
 
-	inputIdent, ok := paramList[0].Type.(*ast.Ident)
-	if !ok {
-		return tfs, fmt.Errorf("failed to get type ident")
-	}
+	inputType := signature.Params().At(0).Type()
 
-	inputType := pkg.Types.Scope().Lookup(inputIdent.Name)
-
-	structArg, ok := inputType.Type().Underlying().(*types.Struct)
-
+	structArg, ok := inputType.Underlying().(*types.Struct)
 	if !ok {
 		return tfs, fmt.Errorf("input argument is not a struct")
 	}
 
-	results := f.Type.Results
-	if results == nil || len(results.List) != 1 {
+	if signature.Results().Len() != 1 {
 		return tfs, fmt.Errorf("%w: wrong number of return arguments", ErrFuncMismatchError)
 	}
 
-	resultIdent, ok := results.List[0].Type.(*ast.Ident)
-	if !ok {
-		return tfs, fmt.Errorf("failed to get result ident")
-	}
-
-	resultType := pkg.Types.Scope().Lookup(resultIdent.Name)
-	resultStruct, ok := resultType.Type().Underlying().(*types.Struct)
+	resultType := signature.Results().At(0).Type()
+	resultStruct, ok := resultType.Underlying().(*types.Struct)
 	if !ok {
 		return tfs, fmt.Errorf("%w: result type is not a struct")
 	}
 
 	tfs = TargetFuncSignature{
-		InType:    inputType,
-		InVar:     paramList[0].Names[0].Name,
-		OutType:   resultType,
+		InType:    inputType.(*types.Named).Obj().Name(),
+		InVar:     signature.Params().At(0).Name(),
+		OutType:   resultType.(*types.Named).Obj().Name(),
 		InStruct:  structArg,
 		OutStruct: resultStruct,
 	}
