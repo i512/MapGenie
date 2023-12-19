@@ -108,6 +108,10 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			fmt.Println("invalid function: ", err)
 			return true
 		}
+		if err != nil {
+			fmt.Println("failed to get func types: %s", err)
+			return true
+		}
 
 		inMap := getStructFieldMap(tfs.InStruct, pkg)
 		outMap := getStructFieldMap(tfs.OutStruct, pkg)
