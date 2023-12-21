@@ -27,11 +27,11 @@ type To struct {
 func Map1(a From) To {
 	var result To
 
+	result.E = a.E
+	result.F = a.F
 	result.A = a.A
 	result.B = a.B
 	result.D = a.D
-	result.E = a.E
-	result.F = a.F
 
 	return result
 }
@@ -40,11 +40,11 @@ func Map1(a From) To {
 func Map2(a From) demo2.Demo2S {
 	var result demo2.Demo2S
 
+	result.A = a.A
+	result.B = a.B
 	result.D = a.D
 	result.E = a.E
 	result.F = a.F
-	result.A = a.A
-	result.B = a.B
 
 	return result
 }

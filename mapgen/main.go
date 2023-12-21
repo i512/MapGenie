@@ -87,9 +87,11 @@ func main() {
 }
 
 func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *packages.Package) {
-	regex := regexp.MustCompile(`^(?:\w+) map this pls`)
+	toMapFuncRegex := regexp.MustCompile(`^(?:\w+) map this pls`)
 
-	replaced := false
+	astModified := false
+
+	importMap := filePkgNameMap(file, pkg)
 
 	astutil.Apply(file, nil, func(cursor *astutil.Cursor) bool {
 		funcDecl, ok := cursor.Node().(*ast.FuncDecl)
@@ -97,7 +99,7 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			return true
 		}
 
-		if funcDecl.Doc == nil || !regex.MatchString(funcDecl.Doc.Text()) {
+		if funcDecl.Doc == nil || !toMapFuncRegex.MatchString(funcDecl.Doc.Text()) {
 			fmt.Println("ignored", funcDecl.Name)
 			return true
 		}
@@ -110,7 +112,7 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			return true
 		}
 		if err != nil {
-			fmt.Println("failed to get func types: %s", err)
+			fmt.Println("failed to get func types: ", err)
 			return true
 		}
 
@@ -119,9 +121,9 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 		mappable := mappableFields(inMap, outMap)
 
 		data := MapTemplateData{
-			InputType:  fileLocalName(tfs.InType, pkg, file),
+			InputType:  fileLocalName(tfs.InType, importMap),
 			InputVar:   tfs.InVar,
-			OutputType: fileLocalName(tfs.OutType, pkg, file),
+			OutputType: fileLocalName(tfs.OutType, importMap),
 			Fields:     mappable,
 		}
 
@@ -144,12 +146,12 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 
 		funcDecl.Body = funcAst.(*ast.FuncLit).Body
 
-		replaced = true
+		astModified = true
 
 		return true
 	})
 
-	if replaced {
+	if astModified {
 		f, err := os.OpenFile(filePath, os.O_RDWR|os.O_TRUNC, 0755)
 		if err != nil {
 			panic(err)
@@ -163,7 +165,7 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 	}
 }
 
-func fileLocalName(t *types.Named, pkg *packages.Package, file *ast.File) string {
+func fileLocalName(t *types.Named, importMap map[string]string) string {
 	globalName := t.String()
 	parts := strings.Split(globalName, ".")
 	if len(parts) != 2 {
@@ -172,11 +174,9 @@ func fileLocalName(t *types.Named, pkg *packages.Package, file *ast.File) string
 
 	pkgName, objName := parts[0], parts[1]
 
-	localNameMap := importPkgLocalNameMap(file, pkg)
-
-	name, ok := localNameMap[pkgName]
+	name, ok := importMap[pkgName]
 	if !ok {
-		panic("failed to obtain obj pkg local name")
+		panic("failed to obtain type's import name")
 	}
 
 	if name == "" {
@@ -186,7 +186,7 @@ func fileLocalName(t *types.Named, pkg *packages.Package, file *ast.File) string
 	return name + "." + objName
 }
 
-func importPkgLocalNameMap(file *ast.File, pkg *packages.Package) map[string]string {
+func filePkgNameMap(file *ast.File, pkg *packages.Package) map[string]string {
 	imports := make(map[string]string)
 
 	imports[pkg.PkgPath] = ""
