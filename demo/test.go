@@ -1,6 +1,9 @@
 package demo
 
-import "mopper/demo/demo2"
+import (
+	"mopper/demo/demo2"
+	demo3aliased "mopper/demo/demo2/demo3"
+)
 
 type From struct {
 	A int
@@ -20,9 +23,19 @@ type To struct {
 	F     float64
 }
 
-// FromToTo map this pls
-func FromToTo(a From) demo2.S2 {
-	var result demo2.S2
+// Map1 map this pls
+func Map1(a From) To {
+	return To{}
+}
+
+// Map2 map this pls
+func Map2(a From) demo2.Demo2S {
+	return demo2.Demo2S{}
+}
+
+// Map3 map this pls
+func Map3(a From) demo3aliased.Demo3S {
+	var result demo3aliased.Demo3S
 
 	result.A = a.A
 	result.B = a.B

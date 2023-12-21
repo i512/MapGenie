@@ -1,6 +1,6 @@
-package demo2
+package demo3
 
-type Demo2S struct {
+type Demo3S struct {
 	Other int
 	A     int
 	B     string
