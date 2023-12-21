@@ -143,11 +143,11 @@ func b(To) From {
 func FromToTo(a From) (b To) {
 	var result To
 
+	result.E = a.E
+	result.F = a.F
 	result.A = a.A
 	result.B = a.B
 	result.D = a.D
-	result.E = a.E
-	result.F = a.F
 
 	return result
 }

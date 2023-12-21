@@ -14,6 +14,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strings"
 	"text/template"
 )
 
@@ -40,7 +41,7 @@ type MapTemplateData struct {
 }
 
 type TargetFuncSignature struct {
-	InType, OutType     string
+	InType, OutType     *types.Named
 	InVar               string
 	InStruct, OutStruct *types.Struct
 }
@@ -118,9 +119,9 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 		mappable := mappableFields(inMap, outMap)
 
 		data := MapTemplateData{
-			InputType:  tfs.InType,
+			InputType:  fileLocalName(tfs.InType, pkg, file),
 			InputVar:   tfs.InVar,
-			OutputType: tfs.OutType,
+			OutputType: fileLocalName(tfs.OutType, pkg, file),
 			Fields:     mappable,
 		}
 
@@ -162,6 +163,50 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 	}
 }
 
+func fileLocalName(t *types.Named, pkg *packages.Package, file *ast.File) string {
+	globalName := t.String()
+	parts := strings.Split(globalName, ".")
+	if len(parts) != 2 {
+		panic("could not detect obj name")
+	}
+
+	pkgName, objName := parts[0], parts[1]
+
+	localNameMap := importPkgLocalNameMap(file, pkg)
+
+	name, ok := localNameMap[pkgName]
+	if !ok {
+		panic("failed to obtain obj pkg local name")
+	}
+
+	if name == "" {
+		return objName
+	}
+
+	return name + "." + objName
+}
+
+func importPkgLocalNameMap(file *ast.File, pkg *packages.Package) map[string]string {
+	imports := make(map[string]string)
+
+	imports[pkg.PkgPath] = ""
+
+	for _, imp := range file.Imports {
+		path := strings.Trim(imp.Path.Value, `"`)
+		pathWithoutV2 := strings.TrimSuffix(path, "/v2")
+		parts := strings.Split(pathWithoutV2, "/")
+
+		localName := parts[len(parts)-1]
+		if imp.Name != nil {
+			localName = imp.Name.Name
+		}
+
+		imports[path] = localName
+	}
+
+	return imports
+}
+
 var ErrFuncMismatchError = fmt.Errorf("function is not mappable")
 
 func getInputOutputTypes(f *ast.FuncDecl, pkg *packages.Package) (tfs TargetFuncSignature, err error) {
@@ -190,9 +235,9 @@ func getInputOutputTypes(f *ast.FuncDecl, pkg *packages.Package) (tfs TargetFunc
 	}
 
 	tfs = TargetFuncSignature{
-		InType:    inputType.(*types.Named).Obj().Name(),
+		InType:    inputType.(*types.Named),
 		InVar:     signature.Params().At(0).Name(),
-		OutType:   resultType.(*types.Named).Obj().Name(),
+		OutType:   resultType.(*types.Named),
 		InStruct:  structArg,
 		OutStruct: resultStruct,
 	}
