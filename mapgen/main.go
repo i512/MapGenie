@@ -3,10 +3,11 @@ package main
 import (
 	"bytes"
 	"errors"
+	"flag"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/parser"
-	"go/printer"
 	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
@@ -16,6 +17,7 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+	"unicode"
 )
 
 const mapTemplate = `
@@ -47,9 +49,12 @@ type TargetFuncSignature struct {
 }
 
 func main() {
-	//Many tools pass their command-line arguments (after any flags)
-	//uninterpreted to packages.Load so that it can interpret them
-	//according to the conventions of the underlying build system.
+	flag.Parse()
+	patterns := flag.Args()
+	if len(patterns) == 0 {
+		panic("provide package patterns in arguments, for example: ./...")
+	}
+
 	fset := token.NewFileSet()
 
 	cfg := packages.Config{
@@ -64,7 +69,7 @@ func main() {
 			packages.NeedCompiledGoFiles,
 	}
 
-	pkgs, err := packages.Load(&cfg, "./...")
+	pkgs, err := packages.Load(&cfg, patterns...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "load: %v\n", err)
 		os.Exit(1)
@@ -152,13 +157,13 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 	})
 
 	if astModified {
-		f, err := os.OpenFile(filePath, os.O_RDWR|os.O_TRUNC, 0755)
+		f, err := os.OpenFile(filePath, os.O_RDWR|os.O_TRUNC, 0755) // read existing permissions?
 		if err != nil {
 			panic(err)
 		}
 		defer f.Close()
 
-		err = printer.Fprint(f, fset, file)
+		err = format.Node(f, fset, file)
 		if err != nil {
 			panic(err)
 		}
@@ -263,6 +268,11 @@ func mappableFields(in, out map[string]types.Type) []Field {
 		inMapType, ok := in[outMapField]
 		if !ok {
 			fmt.Println("no matching field for ", outMapField)
+			continue
+		}
+
+		if unicode.IsLower(([]rune(outMapField))[0]) {
+			fmt.Println("output field is unexported ", outMapField)
 			continue
 		}
 
