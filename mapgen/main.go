@@ -6,12 +6,11 @@ import (
 	"flag"
 	"fmt"
 	"go/ast"
-	"go/format"
-	"go/parser"
 	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
+	"io"
 	"os"
 	"reflect"
 	"regexp"
@@ -20,13 +19,11 @@ import (
 	"unicode"
 )
 
-const mapTemplate = `
-func (input {{ .InputType }}) {{ .OutputType }} {
+const mapTemplate = `func {{ .FuncName }}(input {{ .InputType }}) {{ .OutputType }} {
 	var result {{ .OutputType }}
 
-	{{ range .Fields }}result.{{ .Name }} = {{ $.InputVar }}.{{ .Name }}
+	{{ range .Fields }}result.{{ .Name }} = input.{{ .Name }}
 	{{ end }}
-
 	return result
 }
 `
@@ -36,6 +33,7 @@ type Field struct {
 }
 
 type MapTemplateData struct {
+	FuncName   string
 	InputType  string
 	InputVar   string
 	OutputType string
@@ -91,12 +89,17 @@ func main() {
 	}
 }
 
+type FileChange struct {
+	pos, end int
+	content  []byte
+}
+
 func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *packages.Package) {
 	toMapFuncRegex := regexp.MustCompile(`^(?:\w+) map this pls`)
 
-	astModified := false
-
 	importMap := filePkgNameMap(file, pkg)
+
+	var fileChange []FileChange
 
 	astutil.Apply(file, nil, func(cursor *astutil.Cursor) bool {
 		funcDecl, ok := cursor.Node().(*ast.FuncDecl)
@@ -126,6 +129,7 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 		mappable := mappableFields(inMap, outMap)
 
 		data := MapTemplateData{
+			FuncName:   funcDecl.Name.Name,
 			InputType:  fileLocalName(tfs.InType, importMap),
 			InputVar:   tfs.InVar,
 			OutputType: fileLocalName(tfs.OutType, importMap),
@@ -139,34 +143,50 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			panic(err)
 		}
 
-		fmt.Println(funcSource.String())
-		fmt.Println("mappable: ", mappable)
-
-		replacementFile := pkg.Name + "_" + funcDecl.Name.Name + "_replacement.go"
-		fmt.Println(replacementFile)
-		funcAst, err := parser.ParseExprFrom(fset, replacementFile, funcSource.String(), 0)
-		if err != nil {
-			panic(err)
-		}
-
-		funcDecl.Body = funcAst.(*ast.FuncLit).Body
-
-		astModified = true
+		fileChange = append(fileChange, FileChange{
+			pos:     fset.Position(funcDecl.Pos()).Offset,
+			end:     fset.Position(funcDecl.End()).Offset,
+			content: funcSource.Bytes(),
+		})
 
 		return true
 	})
 
-	if astModified {
-		f, err := os.OpenFile(filePath, os.O_RDWR|os.O_TRUNC, 0755) // read existing permissions?
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
+	if len(fileChange) > 0 {
+		modifyFile(filePath, fileChange)
+	}
+}
 
-		err = format.Node(f, fset, file)
-		if err != nil {
-			panic(err)
-		}
+func modifyFile(filePath string, fileChange []FileChange) {
+	f, err := os.OpenFile(filePath, os.O_RDWR, 0755) // read existing permissions?
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	fileContent, err := io.ReadAll(f)
+	if err != nil {
+		panic(err)
+	}
+
+	for i := len(fileChange) - 1; i >= 0; i-- {
+		change := fileChange[i]
+		//fileContent = append(append(fileContent[:change.pos], change.content...), fileContent[change.end:]...)
+
+		step1 := append(change.content, fileContent[change.end:]...)
+		step2 := append(fileContent[:change.pos], step1...)
+
+		fileContent = step2
+	}
+
+	_, err = f.Seek(0, 0)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = f.Write(fileContent)
+	if err != nil {
+		panic(err)
 	}
 }
 
