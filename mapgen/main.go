@@ -22,14 +22,17 @@ import (
 const mapTemplate = `func {{ .FuncName }}(input {{ .InputType }}) {{ .OutputType }} {
 	var result {{ .OutputType }}
 
-	{{ range .Fields }}result.{{ .Name }} = input.{{ .Name }}
+	{{ range .Mappings }}result.{{ .OutName }} = {{ if .OutPtr }}&{{ end }}input.{{ .InName }}
 	{{ end }}
 	return result
 }
 `
 
-type Field struct {
-	Name string
+type TemplateMapping struct {
+	InName  string
+	OutName string
+	OutPtr  bool
+	InPtr   bool
 }
 
 type MapTemplateData struct {
@@ -37,7 +40,7 @@ type MapTemplateData struct {
 	InputType  string
 	InputVar   string
 	OutputType string
-	Fields     []Field
+	Mappings   []TemplateMapping
 }
 
 type TargetFuncSignature struct {
@@ -133,7 +136,7 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			InputType:  fileLocalName(tfs.InType, importMap),
 			InputVar:   tfs.InVar,
 			OutputType: fileLocalName(tfs.OutType, importMap),
-			Fields:     mappable,
+			Mappings:   mappable,
 		}
 
 		t := template.Must(template.New("map").Parse(mapTemplate))
@@ -281,8 +284,8 @@ func getStructFieldMap(s *types.Struct, pkg *packages.Package) map[string]types.
 	return result
 }
 
-func mappableFields(in, out map[string]types.Type) []Field {
-	list := make([]Field, 0)
+func mappableFields(in, out map[string]types.Type) []TemplateMapping {
+	list := make([]TemplateMapping, 0)
 
 	for outMapField, outMapType := range out {
 		inMapType, ok := in[outMapField]
@@ -296,12 +299,17 @@ func mappableFields(in, out map[string]types.Type) []Field {
 			continue
 		}
 
-		if !reflect.DeepEqual(inMapType, outMapType) {
-			fmt.Println("different field types ", outMapField)
+		if reflect.DeepEqual(inMapType, outMapType) {
+			list = append(list, TemplateMapping{InName: outMapField, OutName: outMapField})
 			continue
 		}
 
-		list = append(list, Field{Name: outMapField})
+		outPtr, ok := outMapType.(*types.Pointer)
+		if ok && reflect.DeepEqual(inMapType, outPtr.Elem()) {
+			list = append(list, TemplateMapping{InName: outMapField, OutName: outMapField, OutPtr: true})
+			continue
+		}
+
 	}
 
 	return list
