@@ -1,4 +1,4 @@
-package maps_imported_structs
+package maps_imported_structs_with_alias
 
 import (
 	"github.com/stretchr/testify/assert"

@@ -1,4 +1,4 @@
-package maps_imported_structs
+package maps_pointer_to_value
 
 import (
 	"github.com/stretchr/testify/assert"

@@ -1,4 +1,4 @@
-package maps_imported_structs
+package maps_pointer_to_struct
 
 type A struct {
 	Int int

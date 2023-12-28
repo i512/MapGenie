@@ -19,8 +19,14 @@ import (
 	"unicode"
 )
 
-const mapTemplate = `func {{ .FuncName }}(input {{ .InputType }}) {{ .OutputType }} {
-	var result {{ .OutputType }}
+const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg }} {
+	var result {{ .OutType }}
+
+	{{- if .InIsPtr }}
+	if input == nil {
+		return {{ if .OutIsPtr }}&{{ end }}result
+	}
+	{{ end }}
 
 	{{- range .Mappings }}
 	{{- if .InPtr }}
@@ -32,7 +38,7 @@ const mapTemplate = `func {{ .FuncName }}(input {{ .InputType }}) {{ .OutputType
 	{{- end }}
 	{{- end }}
 
-	return result
+	return {{ if .OutIsPtr }}&{{ end }}result
 }
 `
 
@@ -44,15 +50,34 @@ type TemplateMapping struct {
 }
 
 type MapTemplateData struct {
-	FuncName   string
-	InputType  string
-	InputVar   string
-	OutputType string
-	Mappings   []TemplateMapping
+	FuncName string
+	InType   string
+	InIsPtr  bool
+	InputVar string
+	OutType  string
+	OutIsPtr bool
+	Mappings []TemplateMapping
+}
+
+func (d MapTemplateData) InTypeArg() string {
+	if d.InIsPtr {
+		return "*" + d.InType
+	}
+
+	return d.InType
+}
+
+func (d MapTemplateData) OutTypeArg() string {
+	if d.OutIsPtr {
+		return "*" + d.OutType
+	}
+
+	return d.OutType
 }
 
 type TargetFuncSignature struct {
 	InType, OutType     *types.Named
+	InPtr, OutPtr       bool
 	InVar               string
 	InStruct, OutStruct *types.Struct
 }
@@ -140,11 +165,12 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 		mappable := mappableFields(inMap, outMap)
 
 		data := MapTemplateData{
-			FuncName:   funcDecl.Name.Name,
-			InputType:  fileLocalName(tfs.InType, importMap),
-			InputVar:   tfs.InVar,
-			OutputType: fileLocalName(tfs.OutType, importMap),
-			Mappings:   mappable,
+			FuncName: funcDecl.Name.Name,
+			InType:   fileLocalName(tfs.InType, importMap),
+			InIsPtr:  tfs.InPtr,
+			OutType:  fileLocalName(tfs.OutType, importMap),
+			OutIsPtr: tfs.OutPtr,
+			Mappings: mappable,
 		}
 
 		t := template.Must(template.New("map").Parse(mapTemplate))
@@ -249,36 +275,61 @@ func getInputOutputTypes(f *ast.FuncDecl, pkg *packages.Package) (tfs TargetFunc
 	funcType := pkg.Types.Scope().Lookup(f.Name.Name)
 
 	signature := funcType.Type().(*types.Signature)
-	if signature.Params().Len() != 1 {
-		return tfs, fmt.Errorf("%w: wrong number of arguments", ErrFuncMismatchError)
+	err = getArgument(signature, &tfs)
+	if err != nil {
+		return tfs, fmt.Errorf("bad argument: %w", err)
 	}
 
-	inputType := signature.Params().At(0).Type()
-
-	structArg, ok := inputType.Underlying().(*types.Struct)
-	if !ok {
-		return tfs, fmt.Errorf("input argument is not a struct")
-	}
-
-	if signature.Results().Len() != 1 {
-		return tfs, fmt.Errorf("%w: wrong number of return arguments", ErrFuncMismatchError)
-	}
-
-	resultType := signature.Results().At(0).Type()
-	resultStruct, ok := resultType.Underlying().(*types.Struct)
-	if !ok {
-		return tfs, fmt.Errorf("%w: result type is not a struct")
-	}
-
-	tfs = TargetFuncSignature{
-		InType:    inputType.(*types.Named),
-		InVar:     signature.Params().At(0).Name(),
-		OutType:   resultType.(*types.Named),
-		InStruct:  structArg,
-		OutStruct: resultStruct,
+	err = getResult(signature, &tfs)
+	if err != nil {
+		return tfs, fmt.Errorf("bad return argument: %w", err)
 	}
 
 	return tfs, nil
+}
+
+func getArgument(signature *types.Signature, tfs *TargetFuncSignature) error {
+	if signature.Params().Len() != 1 {
+		return fmt.Errorf("%w: wrong number of arguments", ErrFuncMismatchError)
+	}
+
+	firstArg := signature.Params().At(0).Type()
+	if ptr, ok := firstArg.(*types.Pointer); ok {
+		tfs.InPtr = true
+		firstArg = ptr.Elem()
+	}
+	inType := firstArg.(*types.Named)
+
+	structArg, ok := inType.Underlying().(*types.Struct)
+	if !ok {
+		return fmt.Errorf("%w: input argument is not a struct", ErrFuncMismatchError)
+	}
+
+	tfs.InType = inType
+	tfs.InStruct = structArg
+	return nil
+}
+
+func getResult(signature *types.Signature, tfs *TargetFuncSignature) error {
+	if signature.Results().Len() != 1 {
+		return fmt.Errorf("%w: wrong number of return arguments", ErrFuncMismatchError)
+	}
+
+	firstArg := signature.Results().At(0).Type()
+	if ptr, ok := firstArg.(*types.Pointer); ok {
+		tfs.OutPtr = true
+		firstArg = ptr.Elem()
+	}
+	outType := firstArg.(*types.Named)
+
+	outStruct, ok := firstArg.Underlying().(*types.Struct)
+	if !ok {
+		return fmt.Errorf("%w: result type is not a struct", ErrFuncMismatchError)
+	}
+
+	tfs.OutType = outType
+	tfs.OutStruct = outStruct
+	return nil
 }
 
 func getStructFieldMap(s *types.Struct, pkg *packages.Package) map[string]types.Type {

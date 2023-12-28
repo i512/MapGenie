@@ -1,4 +1,4 @@
-package maps_imported_structs
+package maps_pointer_to_struct
 
 // MapStructPtr map this pls
 func MapStructPtr(input *A) B {

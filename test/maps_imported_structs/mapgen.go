@@ -3,21 +3,21 @@ package maps_imported_structs
 import "mopper/test/maps_imported_structs/imported/b"
 
 // MapAB map this pls
-func MapAB(a A) b.B {
+func MapAB(input A) b.B {
 	var result b.B
 
 	return result
 }
 
 // MapBA map this pls
-func MapBA(a b.B) A {
+func MapBA(input b.B) A {
 	var result A
 
 	return result
 }
 
 // MapBB map this pls
-func MapBB(a b.B) b.B {
+func MapBB(input b.B) b.B {
 	var result b.B
 
 	return result

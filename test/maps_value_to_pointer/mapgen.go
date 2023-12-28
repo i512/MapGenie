@@ -1,4 +1,4 @@
-package maps_imported_structs
+package maps_pointer_to_value
 
 // MapAB map this pls
 func MapAB(input A) B {
