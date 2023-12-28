@@ -22,8 +22,16 @@ import (
 const mapTemplate = `func {{ .FuncName }}(input {{ .InputType }}) {{ .OutputType }} {
 	var result {{ .OutputType }}
 
-	{{ range .Mappings }}result.{{ .OutName }} = {{ if .OutPtr }}&{{ end }}input.{{ .InName }}
-	{{ end }}
+	{{- range .Mappings }}
+	{{- if .InPtr }}
+	if input.{{ .InName }} != nil {
+		result.{{ .OutName }} = *input.{{ .InName }}
+	}
+	{{- else }}
+	result.{{ .OutName }} = {{ if .OutPtr }}&{{ end }}input.{{ .InName }}
+	{{- end }}
+	{{- end }}
+
 	return result
 }
 `
@@ -307,6 +315,12 @@ func mappableFields(in, out map[string]types.Type) []TemplateMapping {
 		outPtr, ok := outMapType.(*types.Pointer)
 		if ok && reflect.DeepEqual(inMapType, outPtr.Elem()) {
 			list = append(list, TemplateMapping{InName: outMapField, OutName: outMapField, OutPtr: true})
+			continue
+		}
+
+		inPtr, ok := inMapType.(*types.Pointer)
+		if ok && reflect.DeepEqual(inPtr.Elem(), outMapType) {
+			list = append(list, TemplateMapping{InName: outMapField, OutName: outMapField, InPtr: true})
 			continue
 		}
 
