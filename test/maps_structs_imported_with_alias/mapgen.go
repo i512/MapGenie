@@ -1,6 +1,6 @@
 package maps_imported_structs_with_alias
 
-import b2 "mopper/test/maps_structs_imported_with_alias/imported/b"
+import b2 "mapgenie/test/maps_structs_imported_with_alias/imported/b"
 
 // MapAB map this pls
 func MapAB(input A) b2.B {
@@ -10,7 +10,6 @@ func MapAB(input A) b2.B {
 	return result
 }
 
-
 // MapBA map this pls
 func MapBA(input b2.B) A {
 	var result A
@@ -18,7 +17,6 @@ func MapBA(input b2.B) A {
 
 	return result
 }
-
 
 // MapBB map this pls
 func MapBB(input b2.B) b2.B {
@@ -28,4 +26,3 @@ func MapBB(input b2.B) b2.B {
 
 	return result
 }
-

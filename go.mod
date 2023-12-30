@@ -1,4 +1,4 @@
-module mopper
+module mapgenie
 
 go 1.21
 

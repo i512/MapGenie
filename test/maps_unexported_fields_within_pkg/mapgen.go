@@ -1,6 +1,6 @@
 package maps_unexported_fields_within_pkg
 
-import "mopper/test/maps_unexported_fields_within_pkg/c"
+import "mapgenie/test/maps_unexported_fields_within_pkg/c"
 
 // MapAB map this pls
 func MapAB(input A) B {
@@ -10,11 +10,9 @@ func MapAB(input A) B {
 	return result
 }
 
-
 // MapAC map this pls
 func MapAC(input A) c.C {
 	var result c.C
 
 	return result
 }
-
