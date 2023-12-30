@@ -3,11 +3,18 @@ package maps_unexported_fields_within_pkg
 import "mopper/test/maps_unexported_fields_within_pkg/c"
 
 // MapAB map this pls
-func MapAB(A) B {
-	return B{}
+func MapAB(input A) B {
+	var result B
+	result.u = input.u
+
+	return result
 }
 
+
 // MapAC map this pls
-func MapAC(A) c.C {
-	return c.C{}
+func MapAC(input A) c.C {
+	var result c.C
+
+	return result
 }
+

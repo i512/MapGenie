@@ -5,20 +5,27 @@ import b2 "mopper/test/maps_structs_imported_with_alias/imported/b"
 // MapAB map this pls
 func MapAB(input A) b2.B {
 	var result b2.B
+	result.Int = input.Int
 
 	return result
 }
+
 
 // MapBA map this pls
 func MapBA(input b2.B) A {
 	var result A
+	result.Int = input.Int
 
 	return result
 }
+
 
 // MapBB map this pls
 func MapBB(input b2.B) b2.B {
 	var result b2.B
+	result.Int = input.Int
+	result.UncommonIntB = input.UncommonIntB
 
 	return result
 }
+

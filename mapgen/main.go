@@ -16,7 +16,6 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
-	"unicode"
 )
 
 const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg }} {
@@ -76,10 +75,25 @@ func (d MapTemplateData) OutTypeArg() string {
 }
 
 type TargetFuncSignature struct {
-	InType, OutType     *types.Named
-	InPtr, OutPtr       bool
-	InVar               string
-	InStruct, OutStruct *types.Struct
+	In, Out StructArg
+}
+
+type StructArg struct {
+	Named  *types.Named
+	Struct *types.Struct
+	IsPtr  bool
+	Local  bool
+}
+
+func (s StructArg) FieldMap() map[string]types.Type {
+	result := map[string]types.Type{}
+
+	for i := 0; i < s.Struct.NumFields(); i++ {
+		f := s.Struct.Field(i)
+		result[f.Name()] = f.Type()
+	}
+
+	return result
 }
 
 func main() {
@@ -160,16 +174,14 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			return true
 		}
 
-		inMap := getStructFieldMap(tfs.InStruct, pkg)
-		outMap := getStructFieldMap(tfs.OutStruct, pkg)
-		mappable := mappableFields(inMap, outMap)
+		mappable := mappableFields(tfs)
 
 		data := MapTemplateData{
 			FuncName: funcDecl.Name.Name,
-			InType:   fileLocalName(tfs.InType, importMap),
-			InIsPtr:  tfs.InPtr,
-			OutType:  fileLocalName(tfs.OutType, importMap),
-			OutIsPtr: tfs.OutPtr,
+			InType:   fileLocalName(tfs.In.Named, importMap),
+			InIsPtr:  tfs.In.IsPtr,
+			OutType:  fileLocalName(tfs.Out.Named, importMap),
+			OutIsPtr: tfs.Out.IsPtr,
 			Mappings: mappable,
 		}
 
@@ -275,75 +287,49 @@ func getInputOutputTypes(f *ast.FuncDecl, pkg *packages.Package) (tfs TargetFunc
 	funcType := pkg.Types.Scope().Lookup(f.Name.Name)
 
 	signature := funcType.Type().(*types.Signature)
-	err = getArgument(signature, &tfs)
+	tfs.In, err = structArgFromTuple(signature.Params())
 	if err != nil {
 		return tfs, fmt.Errorf("bad argument: %w", err)
 	}
 
-	err = getResult(signature, &tfs)
+	tfs.Out, err = structArgFromTuple(signature.Results())
 	if err != nil {
 		return tfs, fmt.Errorf("bad return argument: %w", err)
 	}
 
+	tfs.In.Local = tfs.In.Named.Obj().Pkg().Path() == pkg.PkgPath
+	tfs.Out.Local = tfs.Out.Named.Obj().Pkg().Path() == pkg.PkgPath
+
 	return tfs, nil
 }
 
-func getArgument(signature *types.Signature, tfs *TargetFuncSignature) error {
-	if signature.Params().Len() != 1 {
-		return fmt.Errorf("%w: wrong number of arguments", ErrFuncMismatchError)
+func structArgFromTuple(tuple *types.Tuple) (sa StructArg, err error) {
+	if tuple.Len() != 1 {
+		return sa, fmt.Errorf("%w: wrong number of arguments", ErrFuncMismatchError)
 	}
 
-	firstArg := signature.Params().At(0).Type()
+	firstArg := tuple.At(0).Type()
 	if ptr, ok := firstArg.(*types.Pointer); ok {
-		tfs.InPtr = true
+		sa.IsPtr = true
 		firstArg = ptr.Elem()
 	}
-	inType := firstArg.(*types.Named)
+	named := firstArg.(*types.Named)
 
-	structArg, ok := inType.Underlying().(*types.Struct)
+	structArg, ok := named.Underlying().(*types.Struct)
 	if !ok {
-		return fmt.Errorf("%w: input argument is not a struct", ErrFuncMismatchError)
+		return sa, fmt.Errorf("%w: input argument is not a struct", ErrFuncMismatchError)
 	}
 
-	tfs.InType = inType
-	tfs.InStruct = structArg
-	return nil
+	sa.Named = named
+	sa.Struct = structArg
+
+	return sa, nil
 }
 
-func getResult(signature *types.Signature, tfs *TargetFuncSignature) error {
-	if signature.Results().Len() != 1 {
-		return fmt.Errorf("%w: wrong number of return arguments", ErrFuncMismatchError)
-	}
+func mappableFields(tfs TargetFuncSignature) []TemplateMapping {
+	in := tfs.In.FieldMap()
+	out := tfs.Out.FieldMap()
 
-	firstArg := signature.Results().At(0).Type()
-	if ptr, ok := firstArg.(*types.Pointer); ok {
-		tfs.OutPtr = true
-		firstArg = ptr.Elem()
-	}
-	outType := firstArg.(*types.Named)
-
-	outStruct, ok := firstArg.Underlying().(*types.Struct)
-	if !ok {
-		return fmt.Errorf("%w: result type is not a struct", ErrFuncMismatchError)
-	}
-
-	tfs.OutType = outType
-	tfs.OutStruct = outStruct
-	return nil
-}
-
-func getStructFieldMap(s *types.Struct, pkg *packages.Package) map[string]types.Type {
-	result := map[string]types.Type{}
-
-	for i := 0; i < s.NumFields(); i++ {
-		f := s.Field(i)
-		result[f.Name()] = f.Type()
-	}
-
-	return result
-}
-
-func mappableFields(in, out map[string]types.Type) []TemplateMapping {
 	list := make([]TemplateMapping, 0)
 
 	for outMapField, outMapType := range out {
@@ -353,7 +339,7 @@ func mappableFields(in, out map[string]types.Type) []TemplateMapping {
 			continue
 		}
 
-		if unicode.IsLower(([]rune(outMapField))[0]) {
+		if !token.IsExported(outMapField) && !(tfs.In.Local && tfs.Out.Local) {
 			fmt.Println("output field is unexported ", outMapField)
 			continue
 		}
