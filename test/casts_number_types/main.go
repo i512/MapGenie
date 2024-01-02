@@ -31,5 +31,5 @@ type B struct {
 	Int     int
 	Uint    int
 	Byte    int
-	Rune    rune
+	Rune    int
 }

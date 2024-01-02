@@ -33,19 +33,23 @@ const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg
 		result.{{ .OutName }} = *input.{{ .InName }}
 	}
 	{{- else }}
-	result.{{ .OutName }} = {{ if .OutPtr }}&{{ end }}input.{{ .InName }}
+	result.{{ .OutName }} ={{" "}}
+		{{- if ne .CastWith "" }}{{ .CastWith }}({{- end }}
+		{{- if .OutPtr }}&{{- end }}
+		{{- ""}}input.{{ .InName }}
+		{{- if ne .CastWith "" }}){{- end }}
 	{{- end }}
 	{{- end }}
 
 	return {{ if .OutIsPtr }}&{{ end }}result
-}
-`
+}`
 
 type TemplateMapping struct {
-	InName  string
-	OutName string
-	OutPtr  bool
-	InPtr   bool
+	InName   string
+	InPtr    bool
+	OutName  string
+	OutPtr   bool
+	CastWith string
 }
 
 type MapTemplateData struct {
@@ -237,6 +241,11 @@ func modifyFile(filePath string, fileChange []FileChange) {
 	if err != nil {
 		panic(err)
 	}
+
+	err = f.Truncate(int64(len(fileContent)))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func fileLocalName(t *types.Named, importMap map[string]string) string {
@@ -361,7 +370,18 @@ func mappableFields(tfs TargetFuncSignature) []TemplateMapping {
 			continue
 		}
 
+		if typeIsIntegerOrFloat(inMapType) && typeIsIntegerOrFloat(outMapType) {
+			mapping := TemplateMapping{InName: outMapField, OutName: outMapField, CastWith: outMapType.String()}
+			list = append(list, mapping)
+			continue
+		}
+
 	}
 
 	return list
+}
+
+func typeIsIntegerOrFloat(t types.Type) bool {
+	basic, isBasic := t.(*types.Basic)
+	return isBasic && (basic.Info()&types.IsInteger > 0 || basic.Info()&types.IsFloat > 0)
 }
