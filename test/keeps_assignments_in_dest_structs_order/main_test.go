@@ -8,20 +8,25 @@ import (
 	"testing"
 )
 
-func TestMapAB_DoesAssignmentsInOrder(t *testing.T) {
-	content, err := os.ReadFile("./mapgen_ab.go")
+var assignRegex = regexp.MustCompile(`result\.(\w+)\s+=\s+input\.\w+`)
+
+func checkAssignmentOrder(t *testing.T, path string, expectedOrder []string) {
+	content, err := os.ReadFile(path)
 	require.NoError(t, err)
 
-	regex := regexp.MustCompile(`result\.(\w+)\s+=\s+input\.\w+`)
-	matches := regex.FindAll(content, 100)
-
-	expectedOrder := []string{"B", "C", "A"}
+	matches := assignRegex.FindAllSubmatch(content, 100)
 
 	assert.Len(t, matches, 3)
 	for i, match := range matches {
-		assert.Equal(t, expectedOrder[i], match[1])
+		assert.Equal(t, expectedOrder[i], string(match[1]))
 	}
+
+}
+
+func TestMapAB_DoesAssignmentsInOrder(t *testing.T) {
+	checkAssignmentOrder(t, "./mapgen_ab.go", []string{"B", "C", "A"})
 }
 
 func TestMapBA(t *testing.T) {
+	checkAssignmentOrder(t, "./mapgen_ba.go", []string{"A", "B", "C"})
 }

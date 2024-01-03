@@ -337,45 +337,47 @@ func structArgFromTuple(tuple *types.Tuple) (sa StructArg, err error) {
 
 func mappableFields(tfs TargetFuncSignature) []TemplateMapping {
 	in := tfs.In.FieldMap()
-	out := tfs.Out.FieldMap()
 
 	list := make([]TemplateMapping, 0)
 
-	for outMapField, outMapType := range out {
-		inMapType, ok := in[outMapField]
+	for i := 0; i < tfs.Out.Struct.NumFields(); i++ {
+		field := tfs.Out.Struct.Field(i)
+		outFieldName := field.Name()
+		outFieldType := field.Type()
+
+		inFieldType, ok := in[outFieldName]
 		if !ok {
-			fmt.Println("no matching field for ", outMapField)
+			fmt.Println("no matching field for ", outFieldName)
 			continue
 		}
 
-		if !token.IsExported(outMapField) && !(tfs.In.Local && tfs.Out.Local) {
-			fmt.Println("output field is unexported ", outMapField)
+		if !token.IsExported(outFieldName) && !(tfs.In.Local && tfs.Out.Local) {
+			fmt.Println("output field is unexported ", outFieldName)
 			continue
 		}
 
-		if reflect.DeepEqual(inMapType, outMapType) {
-			list = append(list, TemplateMapping{InName: outMapField, OutName: outMapField})
+		if reflect.DeepEqual(inFieldType, outFieldType) {
+			list = append(list, TemplateMapping{InName: outFieldName, OutName: outFieldName})
 			continue
 		}
 
-		outPtr, ok := outMapType.(*types.Pointer)
-		if ok && reflect.DeepEqual(inMapType, outPtr.Elem()) {
-			list = append(list, TemplateMapping{InName: outMapField, OutName: outMapField, OutPtr: true})
+		outPtr, ok := outFieldType.(*types.Pointer)
+		if ok && reflect.DeepEqual(inFieldType, outPtr.Elem()) {
+			list = append(list, TemplateMapping{InName: outFieldName, OutName: outFieldName, OutPtr: true})
 			continue
 		}
 
-		inPtr, ok := inMapType.(*types.Pointer)
-		if ok && reflect.DeepEqual(inPtr.Elem(), outMapType) {
-			list = append(list, TemplateMapping{InName: outMapField, OutName: outMapField, InPtr: true})
+		inPtr, ok := inFieldType.(*types.Pointer)
+		if ok && reflect.DeepEqual(inPtr.Elem(), outFieldType) {
+			list = append(list, TemplateMapping{InName: outFieldName, OutName: outFieldName, InPtr: true})
 			continue
 		}
 
-		if typeIsIntegerOrFloat(inMapType) && typeIsIntegerOrFloat(outMapType) {
-			mapping := TemplateMapping{InName: outMapField, OutName: outMapField, CastWith: outMapType.String()}
+		if typeIsIntegerOrFloat(inFieldType) && typeIsIntegerOrFloat(outFieldType) {
+			mapping := TemplateMapping{InName: outFieldName, OutName: outFieldName, CastWith: outFieldType.String()}
 			list = append(list, mapping)
 			continue
 		}
-
 	}
 
 	return list
