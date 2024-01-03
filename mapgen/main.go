@@ -373,7 +373,7 @@ func mappableFields(tfs TargetFuncSignature) []TemplateMapping {
 			continue
 		}
 
-		if typeIsIntegerOrFloat(inFieldType) && typeIsIntegerOrFloat(outFieldType) {
+		if typesAreCastable(inFieldType, outFieldType) {
 			mapping := TemplateMapping{InName: outFieldName, OutName: outFieldName, CastWith: outFieldType.String()}
 			list = append(list, mapping)
 			continue
@@ -383,7 +383,27 @@ func mappableFields(tfs TargetFuncSignature) []TemplateMapping {
 	return list
 }
 
+func typesAreCastable(in, out types.Type) bool {
+	numbers := typeIsIntegerOrFloat(in) && typeIsIntegerOrFloat(out)
+	stringLike := typeIsStringOrByteSlice(in) && typeIsStringOrByteSlice(out)
+	return numbers || stringLike
+}
+
 func typeIsIntegerOrFloat(t types.Type) bool {
 	basic, isBasic := t.(*types.Basic)
 	return isBasic && (basic.Info()&types.IsInteger > 0 || basic.Info()&types.IsFloat > 0)
+}
+
+func typeIsStringOrByteSlice(t types.Type) bool {
+	if basic, ok := t.(*types.Basic); ok && basic.Kind()&types.String > 0 {
+		return true
+	}
+
+	slice, ok := t.(*types.Slice)
+	if !ok {
+		return false
+	}
+
+	basic, ok := slice.Elem().(*types.Basic)
+	return ok && basic.Kind()&types.Byte > 0
 }
