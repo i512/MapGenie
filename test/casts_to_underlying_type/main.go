@@ -4,18 +4,18 @@ import "mapgenie/test/casts_to_underlying_type/other"
 
 type A struct {
 	A string
-	B []byte
+	B byte
 	C []byte
-	D []int
+	D map[int]int
 }
 
 type B struct {
 	A String
-	B other.ByteSlice
+	B other.Byte
 	C ByteSlice
-	D IntSlice
+	D IntMap
 }
 
 type String string
 type ByteSlice []byte
-type IntSlice []int
+type IntMap map[int]int

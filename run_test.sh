@@ -1,5 +1,5 @@
 #!/bin/bash
 
-git checkout test/**/mapgen.go
+git checkout test/**/mapgen*.go
 go run ./mapgen/main.go ./test/...
 go test ./test/...

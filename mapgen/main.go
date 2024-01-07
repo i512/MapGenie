@@ -6,15 +6,16 @@ import (
 	"flag"
 	"fmt"
 	"go/ast"
+	"go/format"
+	"go/parser"
 	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
-	"io"
+	"mapgenie/mapgen/edit"
 	"os"
 	"reflect"
 	"regexp"
-	"strings"
 	"text/template"
 )
 
@@ -34,10 +35,10 @@ const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg
 	}
 	{{- else }}
 	result.{{ .OutName }} ={{" "}}
-		{{- if ne .CastWith "" }}{{ .CastWith }}({{- end }}
+		{{- if .Cast }}{{ .OutType }}({{- end }}
 		{{- if .OutPtr }}&{{- end }}
 		{{- ""}}input.{{ .InName }}
-		{{- if ne .CastWith "" }}){{- end }}
+		{{- if .Cast }}){{- end }}
 	{{- end }}
 	{{- end }}
 
@@ -45,11 +46,12 @@ const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg
 }`
 
 type TemplateMapping struct {
-	InName   string
-	InPtr    bool
-	OutName  string
-	OutPtr   bool
-	CastWith string
+	InName  string
+	InPtr   bool
+	OutName string
+	OutPtr  bool
+	OutType string
+	Cast    bool
 }
 
 type MapTemplateData struct {
@@ -123,11 +125,10 @@ func main() {
 
 	pkgs, err := packages.Load(&cfg, patterns...)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "load: %v\n", err)
-		os.Exit(1)
+		panic(err)
 	}
 	if packages.PrintErrors(pkgs) > 0 {
-		os.Exit(1)
+		panic("load errors")
 	}
 
 	// Print the names of the source files
@@ -151,7 +152,7 @@ type FileChange struct {
 func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *packages.Package) {
 	toMapFuncRegex := regexp.MustCompile(`^(?:\w+) map this pls`)
 
-	importMap := filePkgNameMap(file, pkg)
+	fileImports := edit.NewFileImports(file, pkg)
 
 	var fileChange []FileChange
 
@@ -178,13 +179,13 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			return true
 		}
 
-		mappable := mappableFields(tfs)
+		mappable := mappableFields(tfs, fileImports)
 
 		data := MapTemplateData{
 			FuncName: funcDecl.Name.Name,
-			InType:   fileLocalName(tfs.In.Named, importMap),
+			InType:   fileImports.Resolve(tfs.In.Named),
 			InIsPtr:  tfs.In.IsPtr,
-			OutType:  fileLocalName(tfs.Out.Named, importMap),
+			OutType:  fileImports.Resolve(tfs.Out.Named),
 			OutIsPtr: tfs.Out.IsPtr,
 			Mappings: mappable,
 		}
@@ -202,92 +203,40 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			content: funcSource.Bytes(),
 		})
 
+		file, err := parser.ParseFile(fset, "mapgenie_temp.go", "package main\n"+funcSource.String(), 0)
+		if err != nil {
+			panic(err)
+		}
+		fset.RemoveFile(fset.File(file.Pos()))
+
+		newFuncDecl := file.Decls[0].(*ast.FuncDecl)
+		funcDecl.Body = newFuncDecl.Body
+		funcDecl.Type.Params = newFuncDecl.Type.Params
+		funcDecl.Type.Results = newFuncDecl.Type.Results
+
 		return true
 	})
 
 	if len(fileChange) > 0 {
-		modifyFile(filePath, fileChange)
+		fileImports.WriteImportsToAst(fset, file)
+
+		modifyFile(fset, file)
 	}
 }
 
-func modifyFile(filePath string, fileChange []FileChange) {
-	f, err := os.OpenFile(filePath, os.O_RDWR, 0755) // read existing permissions?
+func modifyFile(fset *token.FileSet, file *ast.File) {
+	path := fset.Position(file.Pos()).Filename
+
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0755) // read existing permissions?
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
 
-	fileContent, err := io.ReadAll(f)
+	err = format.Node(f, fset, file)
 	if err != nil {
 		panic(err)
 	}
-
-	for i := len(fileChange) - 1; i >= 0; i-- {
-		change := fileChange[i]
-		//fileContent = append(append(fileContent[:change.pos], change.content...), fileContent[change.end:]...)
-
-		step1 := append(change.content, fileContent[change.end:]...)
-		step2 := append(fileContent[:change.pos], step1...)
-
-		fileContent = step2
-	}
-
-	_, err = f.Seek(0, 0)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = f.Write(fileContent)
-	if err != nil {
-		panic(err)
-	}
-
-	err = f.Truncate(int64(len(fileContent)))
-	if err != nil {
-		panic(err)
-	}
-}
-
-func fileLocalName(t *types.Named, importMap map[string]string) string {
-	globalName := t.String()
-	parts := strings.Split(globalName, ".")
-	if len(parts) != 2 {
-		panic("could not detect obj name")
-	}
-
-	pkgName, objName := parts[0], parts[1]
-
-	name, ok := importMap[pkgName]
-	if !ok {
-		panic("failed to obtain type's import name")
-	}
-
-	if name == "" {
-		return objName
-	}
-
-	return name + "." + objName
-}
-
-func filePkgNameMap(file *ast.File, pkg *packages.Package) map[string]string {
-	imports := make(map[string]string)
-
-	imports[pkg.PkgPath] = ""
-
-	for _, imp := range file.Imports {
-		path := strings.Trim(imp.Path.Value, `"`)
-		pathWithoutV2 := strings.TrimSuffix(path, "/v2")
-		parts := strings.Split(pathWithoutV2, "/")
-
-		localName := parts[len(parts)-1]
-		if imp.Name != nil {
-			localName = imp.Name.Name
-		}
-
-		imports[path] = localName
-	}
-
-	return imports
 }
 
 var ErrFuncMismatchError = fmt.Errorf("function is not mappable")
@@ -335,7 +284,7 @@ func structArgFromTuple(tuple *types.Tuple) (sa StructArg, err error) {
 	return sa, nil
 }
 
-func mappableFields(tfs TargetFuncSignature) []TemplateMapping {
+func mappableFields(tfs TargetFuncSignature, imports *edit.FileImports) []TemplateMapping {
 	in := tfs.In.FieldMap()
 
 	list := make([]TemplateMapping, 0)
@@ -374,7 +323,7 @@ func mappableFields(tfs TargetFuncSignature) []TemplateMapping {
 		}
 
 		if typesAreCastable(inFieldType, outFieldType) {
-			mapping := TemplateMapping{InName: outFieldName, OutName: outFieldName, CastWith: outFieldType.String()}
+			mapping := TemplateMapping{InName: outFieldName, OutName: outFieldName, Cast: true, OutType: imports.Resolve(outFieldType)}
 			list = append(list, mapping)
 			continue
 		}
@@ -386,7 +335,8 @@ func mappableFields(tfs TargetFuncSignature) []TemplateMapping {
 func typesAreCastable(in, out types.Type) bool {
 	numbers := typeIsIntegerOrFloat(in) && typeIsIntegerOrFloat(out)
 	stringLike := typeIsStringOrByteSlice(in) && typeIsStringOrByteSlice(out)
-	return numbers || stringLike
+	derivedType := typeIsUnderlying(in, out) || typeIsUnderlying(out, in)
+	return numbers || stringLike || derivedType
 }
 
 func typeIsIntegerOrFloat(t types.Type) bool {
@@ -406,4 +356,8 @@ func typeIsStringOrByteSlice(t types.Type) bool {
 
 	basic, ok := slice.Elem().(*types.Basic)
 	return ok && basic.Kind()&types.Byte > 0
+}
+
+func typeIsUnderlying(base, derived types.Type) bool {
+	return reflect.DeepEqual(base, derived.Underlying())
 }

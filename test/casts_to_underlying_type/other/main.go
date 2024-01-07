@@ -1,3 +1,3 @@
 package other
 
-type ByteSlice []byte
+type Byte byte
