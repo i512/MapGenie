@@ -1,6 +1,7 @@
 package edit
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -10,6 +11,7 @@ import (
 )
 
 type FileImports struct {
+	pkg        *packages.Package
 	importMap  map[string]string
 	newImports []string
 }
@@ -32,7 +34,7 @@ func NewFileImports(file *ast.File, pkg *packages.Package) *FileImports {
 		imports[path] = localName
 	}
 
-	return &FileImports{importMap: imports}
+	return &FileImports{importMap: imports, pkg: pkg}
 }
 
 func (f *FileImports) Resolve(t types.Type) string {
@@ -47,11 +49,7 @@ func (f *FileImports) Resolve(t types.Type) string {
 
 	pkgPath, objName := parts[0], parts[1]
 
-	name, ok := f.importMap[pkgPath]
-	if !ok {
-		name = f.AppendImport(pkgPath)
-	}
-
+	name := f.PkgImportAlias(pkgPath)
 	if name == "" {
 		return objName
 	}
@@ -59,21 +57,56 @@ func (f *FileImports) Resolve(t types.Type) string {
 	return name + "." + objName
 }
 
-func (f *FileImports) AppendImport(pkgPath string) string {
+func (f *FileImports) PkgImportAlias(pkgPath string) string {
 	if name, ok := f.importMap[pkgPath]; ok {
 		return name
 	}
 
 	f.newImports = append(f.newImports, pkgPath)
-	parts := strings.Split(pkgPath, "/")
-	name := parts[len(parts)-1]
-	f.importMap[pkgPath] = name
+	name := f.pkgDefaultAlias(pkgPath)
+	alias := f.resolvePkgNameCollision(name, pkgPath)
+	f.importMap[pkgPath] = alias
 
-	return name
+	return alias
+}
+
+func (f *FileImports) pkgDefaultAlias(pkgPath string) string {
+	parts := strings.Split(pkgPath, "/")
+	return parts[len(parts)-1]
+}
+
+func (f *FileImports) resolvePkgNameCollision(name string, pkgPath string) string {
+	if f.checkNameAvailable(name, pkgPath) {
+		return name
+	}
+
+	for i := 2; i < 1000; i++ {
+		alias := fmt.Sprintf("%s%d", name, i)
+		if f.checkNameAvailable(alias, pkgPath) {
+			return alias
+		}
+	}
+
+	panic("shame")
+}
+
+func (f *FileImports) checkNameAvailable(name string, pkgPath string) bool {
+	for path, usedImportName := range f.importMap {
+		if usedImportName == name {
+			return path == pkgPath
+		}
+	}
+
+	return f.pkg.Types.Scope().Lookup(name) == nil
 }
 
 func (f *FileImports) WriteImportsToAst(fset *token.FileSet, file *ast.File) {
 	for _, pkgPath := range f.newImports {
-		astutil.AddImport(fset, file, pkgPath)
+		alias := f.importMap[pkgPath]
+		name := ""
+		if alias != f.pkgDefaultAlias(pkgPath) {
+			name = alias
+		}
+		astutil.AddNamedImport(fset, file, name, pkgPath)
 	}
 }

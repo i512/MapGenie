@@ -1,4 +1,4 @@
-package main
+package edit
 
 import (
 	"bytes"
@@ -69,7 +69,7 @@ func (d MapTemplateData) OutTypeArg() string {
 	return d.OutType
 }
 
-func mapperFuncAst(fset *token.FileSet, data MapTemplateData) *ast.FuncDecl {
+func MapperFuncAst(fset *token.FileSet, data MapTemplateData) *ast.FuncDecl {
 	t := template.Must(template.New("map").Parse(mapTemplate))
 	funcSource := bytes.NewBuffer(nil)
 	err := t.Execute(funcSource, data)

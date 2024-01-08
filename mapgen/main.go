@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"flag"
 	"fmt"
 	"go/ast"
 	"go/format"
-	"go/parser"
 	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
@@ -16,69 +14,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
-	"text/template"
 )
-
-const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg }} {
-	var result {{ .OutType }}
-
-	{{- if .InIsPtr }}
-	if input == nil {
-		return {{ if .OutIsPtr }}&{{ end }}result
-	}
-	{{ end }}
-
-	{{- range .Mappings }}
-	{{- if .InPtr }}
-	if input.{{ .InName }} != nil {
-		result.{{ .OutName }} = *input.{{ .InName }}
-	}
-	{{- else }}
-	result.{{ .OutName }} ={{" "}}
-		{{- if .Cast }}{{ .OutType }}({{- end }}
-		{{- if .OutPtr }}&{{- end }}
-		{{- ""}}input.{{ .InName }}
-		{{- if .Cast }}){{- end }}
-	{{- end }}
-	{{- end }}
-
-	return {{ if .OutIsPtr }}&{{ end }}result
-}`
-
-type TemplateMapping struct {
-	InName  string
-	InPtr   bool
-	OutName string
-	OutPtr  bool
-	OutType string
-	Cast    bool
-}
-
-type MapTemplateData struct {
-	FuncName string
-	InType   string
-	InIsPtr  bool
-	InputVar string
-	OutType  string
-	OutIsPtr bool
-	Mappings []TemplateMapping
-}
-
-func (d MapTemplateData) InTypeArg() string {
-	if d.InIsPtr {
-		return "*" + d.InType
-	}
-
-	return d.InType
-}
-
-func (d MapTemplateData) OutTypeArg() string {
-	if d.OutIsPtr {
-		return "*" + d.OutType
-	}
-
-	return d.OutType
-}
 
 type TargetFuncSignature struct {
 	In, Out StructArg
@@ -144,17 +80,12 @@ func main() {
 	}
 }
 
-type FileChange struct {
-	pos, end int
-	content  []byte
-}
-
 func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *packages.Package) {
 	toMapFuncRegex := regexp.MustCompile(`^(?:\w+) map this pls`)
 
 	fileImports := edit.NewFileImports(file, pkg)
 
-	var fileChange []FileChange
+	astModified := false
 
 	astutil.Apply(file, nil, func(cursor *astutil.Cursor) bool {
 		funcDecl, ok := cursor.Node().(*ast.FuncDecl)
@@ -181,7 +112,7 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 
 		mappable := mappableFields(tfs, fileImports)
 
-		data := MapTemplateData{
+		data := edit.MapTemplateData{
 			FuncName: funcDecl.Name.Name,
 			InType:   fileImports.Resolve(tfs.In.Named),
 			InIsPtr:  tfs.In.IsPtr,
@@ -190,34 +121,17 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			Mappings: mappable,
 		}
 
-		t := template.Must(template.New("map").Parse(mapTemplate))
-		funcSource := bytes.NewBuffer(nil)
-		err = t.Execute(funcSource, data)
-		if err != nil {
-			panic(err)
-		}
-
-		fileChange = append(fileChange, FileChange{
-			pos:     fset.Position(funcDecl.Pos()).Offset,
-			end:     fset.Position(funcDecl.End()).Offset,
-			content: funcSource.Bytes(),
-		})
-
-		file, err := parser.ParseFile(fset, "mapgenie_temp.go", "package main\n"+funcSource.String(), 0)
-		if err != nil {
-			panic(err)
-		}
-		fset.RemoveFile(fset.File(file.Pos()))
-
-		newFuncDecl := file.Decls[0].(*ast.FuncDecl)
+		newFuncDecl := edit.MapperFuncAst(fset, data)
 		funcDecl.Body = newFuncDecl.Body
 		funcDecl.Type.Params = newFuncDecl.Type.Params
 		funcDecl.Type.Results = newFuncDecl.Type.Results
 
+		astModified = true
+
 		return true
 	})
 
-	if len(fileChange) > 0 {
+	if astModified {
 		fileImports.WriteImportsToAst(fset, file)
 
 		modifyFile(fset, file)
@@ -284,10 +198,10 @@ func structArgFromTuple(tuple *types.Tuple) (sa StructArg, err error) {
 	return sa, nil
 }
 
-func mappableFields(tfs TargetFuncSignature, imports *edit.FileImports) []TemplateMapping {
+func mappableFields(tfs TargetFuncSignature, imports *edit.FileImports) []edit.TemplateMapping {
 	in := tfs.In.FieldMap()
 
-	list := make([]TemplateMapping, 0)
+	list := make([]edit.TemplateMapping, 0)
 
 	for i := 0; i < tfs.Out.Struct.NumFields(); i++ {
 		field := tfs.Out.Struct.Field(i)
@@ -306,24 +220,24 @@ func mappableFields(tfs TargetFuncSignature, imports *edit.FileImports) []Templa
 		}
 
 		if reflect.DeepEqual(inFieldType, outFieldType) {
-			list = append(list, TemplateMapping{InName: outFieldName, OutName: outFieldName})
+			list = append(list, edit.TemplateMapping{InName: outFieldName, OutName: outFieldName})
 			continue
 		}
 
 		outPtr, ok := outFieldType.(*types.Pointer)
 		if ok && reflect.DeepEqual(inFieldType, outPtr.Elem()) {
-			list = append(list, TemplateMapping{InName: outFieldName, OutName: outFieldName, OutPtr: true})
+			list = append(list, edit.TemplateMapping{InName: outFieldName, OutName: outFieldName, OutPtr: true})
 			continue
 		}
 
 		inPtr, ok := inFieldType.(*types.Pointer)
 		if ok && reflect.DeepEqual(inPtr.Elem(), outFieldType) {
-			list = append(list, TemplateMapping{InName: outFieldName, OutName: outFieldName, InPtr: true})
+			list = append(list, edit.TemplateMapping{InName: outFieldName, OutName: outFieldName, InPtr: true})
 			continue
 		}
 
 		if typesAreCastable(inFieldType, outFieldType) {
-			mapping := TemplateMapping{InName: outFieldName, OutName: outFieldName, Cast: true, OutType: imports.Resolve(outFieldType)}
+			mapping := edit.TemplateMapping{InName: outFieldName, OutName: outFieldName, Cast: true, OutType: imports.Resolve(outFieldType)}
 			list = append(list, mapping)
 			continue
 		}
