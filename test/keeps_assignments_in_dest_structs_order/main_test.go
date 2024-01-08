@@ -20,7 +20,6 @@ func checkAssignmentOrder(t *testing.T, path string, expectedOrder []string) {
 	for i, match := range matches {
 		assert.Equal(t, expectedOrder[i], string(match[1]))
 	}
-
 }
 
 func TestMapAB_DoesAssignmentsInOrder(t *testing.T) {
