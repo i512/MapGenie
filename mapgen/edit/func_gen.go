@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"strings"
 	"text/template"
 )
 
@@ -22,7 +21,7 @@ const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg
 		{{- if and .InPtr .OutPtr }}
 			if input.{{ .InName }} != nil {
 				{{ .OutName }} := 
-					{{- if ne .CastWith "" }}{{ .CastWithVal }}({{- end }}
+					{{- if ne .CastWith "" }}{{ .CastWith }}({{- end }}
 					*input.{{ .InName }}
 					{{- if ne .CastWith "" }}){{- end }}
 
@@ -59,10 +58,6 @@ type TemplateMapping struct {
 	OutPtr   bool
 	CastWith string
 	Cast     bool
-}
-
-func (m TemplateMapping) CastWithVal() string {
-	return strings.TrimPrefix(m.CastWith, "*")
 }
 
 type MapTemplateData struct {

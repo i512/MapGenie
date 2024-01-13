@@ -257,7 +257,7 @@ func mappableFields(tfs TargetFuncSignature, imports *edit.FileImports) []edit.T
 				OutName:  outFieldName,
 				InPtr:    true,
 				OutPtr:   true,
-				CastWith: castWith(inPtr.Elem(), outFieldType, imports),
+				CastWith: castWith(inPtr.Elem(), outPtr.Elem(), imports),
 			})
 			continue
 		}

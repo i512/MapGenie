@@ -30,3 +30,13 @@ type B struct {
 	StrPtrToBytePtr *[]byte
 	BytePtrToStrPtr *string
 }
+
+type C struct {
+	IntPtrToInt IntPtr
+	IntToIntPtr Int
+}
+
+type D struct {
+	IntPtrToInt int
+	IntToIntPtr IntPtr
+}
