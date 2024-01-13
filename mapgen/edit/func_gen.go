@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"strings"
 	"text/template"
 )
 
@@ -18,29 +19,50 @@ const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg
 	{{ end }}
 
 	{{- range .Mappings }}
-	{{- if .InPtr }}
-	if input.{{ .InName }} != nil {
-		result.{{ .OutName }} = *input.{{ .InName }}
-	}
-	{{- else }}
-	result.{{ .OutName }} ={{" "}}
-		{{- if .Cast }}{{ .OutType }}({{- end }}
-		{{- if .OutPtr }}&{{- end }}
-		{{- ""}}input.{{ .InName }}
-		{{- if .Cast }}){{- end }}
-	{{- end }}
+		{{- if and .InPtr .OutPtr }}
+			if input.{{ .InName }} != nil {
+				{{ .OutName }} := 
+					{{- if ne .CastWith "" }}{{ .CastWithVal }}({{- end }}
+					*input.{{ .InName }}
+					{{- if ne .CastWith "" }}){{- end }}
+
+				result.{{ .OutName }} = &{{ .OutName }}
+			}
+		{{- else if .InPtr }}
+			if input.{{ .InName }} != nil {
+				result.{{ .OutName }} ={{" "}}
+					{{- if ne .CastWith "" }}{{ .CastWith }}({{- end }}
+					*input.{{ .InName }}
+					{{- if ne .CastWith "" }}){{- end }}
+			}
+		{{- else }}
+			{{- if and .OutPtr (ne .CastWith "")}}
+				{{ .OutName }} := {{ .CastWith }}(input.{{ .InName }})
+				result.{{ .OutName }} = &{{ .OutName }}
+			{{- else }}
+				result.{{ .OutName }} ={{" "}}
+					{{- if ne .CastWith "" }}{{ .CastWith }}({{- end }}
+					{{- if .OutPtr }}&{{- end }}
+					{{- ""}}input.{{ .InName }}
+					{{- if ne .CastWith "" }}){{- end }}
+		   {{- end }}
+		{{- end }}
 	{{- end }}
 
 	return {{ if .OutIsPtr }}&{{ end }}result
 }`
 
 type TemplateMapping struct {
-	InName  string
-	InPtr   bool
-	OutName string
-	OutPtr  bool
-	OutType string
-	Cast    bool
+	InName   string
+	InPtr    bool
+	OutName  string
+	OutPtr   bool
+	CastWith string
+	Cast     bool
+}
+
+func (m TemplateMapping) CastWithVal() string {
+	return strings.TrimPrefix(m.CastWith, "*")
 }
 
 type MapTemplateData struct {

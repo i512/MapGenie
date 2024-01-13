@@ -114,9 +114,9 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 
 		data := edit.MapTemplateData{
 			FuncName: funcDecl.Name.Name,
-			InType:   fileImports.Resolve(tfs.In.Named),
+			InType:   fileImports.ResolveTypeName(tfs.In.Named),
 			InIsPtr:  tfs.In.IsPtr,
-			OutType:  fileImports.Resolve(tfs.Out.Named),
+			OutType:  fileImports.ResolveTypeName(tfs.Out.Named),
 			OutIsPtr: tfs.Out.IsPtr,
 			Mappings: mappable,
 		}
@@ -219,26 +219,46 @@ func mappableFields(tfs TargetFuncSignature, imports *edit.FileImports) []edit.T
 			continue
 		}
 
-		if reflect.DeepEqual(inFieldType, outFieldType) {
-			list = append(list, edit.TemplateMapping{InName: outFieldName, OutName: outFieldName})
+		if typesAreCastable(inFieldType, outFieldType) {
+			mapping := edit.TemplateMapping{
+				InName:   outFieldName,
+				OutName:  outFieldName,
+				CastWith: castWith(inFieldType, outFieldType, imports),
+			}
+			list = append(list, mapping)
 			continue
 		}
 
 		outPtr, ok := outFieldType.(*types.Pointer)
-		if ok && reflect.DeepEqual(inFieldType, outPtr.Elem()) {
-			list = append(list, edit.TemplateMapping{InName: outFieldName, OutName: outFieldName, OutPtr: true})
+		if ok && typesAreCastable(inFieldType, outPtr.Elem()) {
+			list = append(list, edit.TemplateMapping{
+				InName:   outFieldName,
+				OutName:  outFieldName,
+				OutPtr:   true,
+				CastWith: castWith(inFieldType, outPtr.Elem(), imports),
+			})
 			continue
 		}
 
 		inPtr, ok := inFieldType.(*types.Pointer)
-		if ok && reflect.DeepEqual(inPtr.Elem(), outFieldType) {
-			list = append(list, edit.TemplateMapping{InName: outFieldName, OutName: outFieldName, InPtr: true})
+		if ok && typesAreCastable(inPtr.Elem(), outFieldType) {
+			list = append(list, edit.TemplateMapping{
+				InName:   outFieldName,
+				OutName:  outFieldName,
+				InPtr:    true,
+				CastWith: castWith(inPtr.Elem(), outFieldType, imports),
+			})
 			continue
 		}
 
-		if typesAreCastable(inFieldType, outFieldType) {
-			mapping := edit.TemplateMapping{InName: outFieldName, OutName: outFieldName, Cast: true, OutType: imports.Resolve(outFieldType)}
-			list = append(list, mapping)
+		if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
+			list = append(list, edit.TemplateMapping{
+				InName:   outFieldName,
+				OutName:  outFieldName,
+				InPtr:    true,
+				OutPtr:   true,
+				CastWith: castWith(inPtr.Elem(), outFieldType, imports),
+			})
 			continue
 		}
 	}
@@ -247,10 +267,19 @@ func mappableFields(tfs TargetFuncSignature, imports *edit.FileImports) []edit.T
 }
 
 func typesAreCastable(in, out types.Type) bool {
+	same := reflect.DeepEqual(in, out)
 	numbers := typeIsIntegerOrFloat(in) && typeIsIntegerOrFloat(out)
 	stringLike := typeIsStringOrByteSlice(in) && typeIsStringOrByteSlice(out)
 	derivedType := typeIsUnderlying(in, out) || typeIsUnderlying(out, in)
-	return numbers || stringLike || derivedType
+	return same || numbers || stringLike || derivedType
+}
+
+func castWith(in, out types.Type, imports *edit.FileImports) string {
+	if reflect.DeepEqual(in, out) {
+		return "" // same type, no cast needed
+	}
+
+	return imports.ResolveTypeName(out)
 }
 
 func typeIsIntegerOrFloat(t types.Type) bool {

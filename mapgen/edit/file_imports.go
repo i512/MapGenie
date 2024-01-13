@@ -37,7 +37,12 @@ func NewFileImports(file *ast.File, pkg *packages.Package) *FileImports {
 	return &FileImports{importMap: imports, pkg: pkg}
 }
 
-func (f *FileImports) Resolve(t types.Type) string {
+func (f *FileImports) ResolveTypeName(t types.Type) string {
+	val, ok := t.(*types.Pointer)
+	if ok {
+		return "*" + f.ResolveTypeName(val.Elem())
+	}
+
 	globalName := t.String()
 	parts := strings.Split(globalName, ".")
 	if len(parts) == 1 {
