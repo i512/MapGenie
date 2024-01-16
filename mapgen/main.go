@@ -11,32 +11,11 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
 	"mapgenie/mapgen/edit"
+	"mapgenie/mapgen/entities"
+	"mapgenie/mapgen/typematch"
 	"os"
-	"reflect"
 	"regexp"
 )
-
-type TargetFuncSignature struct {
-	In, Out StructArg
-}
-
-type StructArg struct {
-	Named  *types.Named
-	Struct *types.Struct
-	IsPtr  bool
-	Local  bool
-}
-
-func (s StructArg) FieldMap() map[string]types.Type {
-	result := map[string]types.Type{}
-
-	for i := 0; i < s.Struct.NumFields(); i++ {
-		f := s.Struct.Field(i)
-		result[f.Name()] = f.Type()
-	}
-
-	return result
-}
 
 func main() {
 	flag.Parse()
@@ -110,7 +89,7 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			return true
 		}
 
-		mappable := mappableFields(tfs, fileImports)
+		mappable := typematch.MappableFields(tfs, fileImports)
 
 		data := edit.MapTemplateData{
 			FuncName: funcDecl.Name.Name,
@@ -155,7 +134,7 @@ func modifyFile(fset *token.FileSet, file *ast.File) {
 
 var ErrFuncMismatchError = fmt.Errorf("function is not mappable")
 
-func getInputOutputTypes(f *ast.FuncDecl, pkg *packages.Package) (tfs TargetFuncSignature, err error) {
+func getInputOutputTypes(f *ast.FuncDecl, pkg *packages.Package) (tfs entities.TargetFuncSignature, err error) {
 	funcType := pkg.Types.Scope().Lookup(f.Name.Name)
 
 	signature := funcType.Type().(*types.Signature)
@@ -175,7 +154,7 @@ func getInputOutputTypes(f *ast.FuncDecl, pkg *packages.Package) (tfs TargetFunc
 	return tfs, nil
 }
 
-func structArgFromTuple(tuple *types.Tuple) (sa StructArg, err error) {
+func structArgFromTuple(tuple *types.Tuple) (sa entities.Argument, err error) {
 	if tuple.Len() != 1 {
 		return sa, fmt.Errorf("%w: wrong number of arguments", ErrFuncMismatchError)
 	}
@@ -196,111 +175,4 @@ func structArgFromTuple(tuple *types.Tuple) (sa StructArg, err error) {
 	sa.Struct = structArg
 
 	return sa, nil
-}
-
-func mappableFields(tfs TargetFuncSignature, imports *edit.FileImports) []edit.TemplateMapping {
-	in := tfs.In.FieldMap()
-
-	list := make([]edit.TemplateMapping, 0)
-
-	for i := 0; i < tfs.Out.Struct.NumFields(); i++ {
-		field := tfs.Out.Struct.Field(i)
-		outFieldName := field.Name()
-		outFieldType := field.Type()
-
-		inFieldType, ok := in[outFieldName]
-		if !ok {
-			fmt.Println("no matching field for ", outFieldName)
-			continue
-		}
-
-		if !token.IsExported(outFieldName) && !(tfs.In.Local && tfs.Out.Local) {
-			fmt.Println("output field is unexported ", outFieldName)
-			continue
-		}
-
-		if typesAreCastable(inFieldType, outFieldType) {
-			mapping := edit.TemplateMapping{
-				InName:   outFieldName,
-				OutName:  outFieldName,
-				CastWith: castWith(inFieldType, outFieldType, imports),
-			}
-			list = append(list, mapping)
-			continue
-		}
-
-		outPtr, ok := outFieldType.(*types.Pointer)
-		if ok && typesAreCastable(inFieldType, outPtr.Elem()) {
-			list = append(list, edit.TemplateMapping{
-				InName:   outFieldName,
-				OutName:  outFieldName,
-				OutPtr:   true,
-				CastWith: castWith(inFieldType, outPtr.Elem(), imports),
-			})
-			continue
-		}
-
-		inPtr, ok := inFieldType.(*types.Pointer)
-		if ok && typesAreCastable(inPtr.Elem(), outFieldType) {
-			list = append(list, edit.TemplateMapping{
-				InName:   outFieldName,
-				OutName:  outFieldName,
-				InPtr:    true,
-				CastWith: castWith(inPtr.Elem(), outFieldType, imports),
-			})
-			continue
-		}
-
-		if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
-			list = append(list, edit.TemplateMapping{
-				InName:   outFieldName,
-				OutName:  outFieldName,
-				InPtr:    true,
-				OutPtr:   true,
-				CastWith: castWith(inPtr.Elem(), outPtr.Elem(), imports),
-			})
-			continue
-		}
-	}
-
-	return list
-}
-
-func typesAreCastable(in, out types.Type) bool {
-	same := reflect.DeepEqual(in, out)
-	numbers := typeIsIntegerOrFloat(in) && typeIsIntegerOrFloat(out)
-	stringLike := typeIsStringOrByteSlice(in) && typeIsStringOrByteSlice(out)
-	derivedType := typeIsUnderlying(in, out) || typeIsUnderlying(out, in)
-	return same || numbers || stringLike || derivedType
-}
-
-func castWith(in, out types.Type, imports *edit.FileImports) string {
-	if reflect.DeepEqual(in, out) {
-		return "" // same type, no cast needed
-	}
-
-	return imports.ResolveTypeName(out)
-}
-
-func typeIsIntegerOrFloat(t types.Type) bool {
-	basic, isBasic := t.(*types.Basic)
-	return isBasic && (basic.Info()&types.IsInteger > 0 || basic.Info()&types.IsFloat > 0)
-}
-
-func typeIsStringOrByteSlice(t types.Type) bool {
-	if basic, ok := t.(*types.Basic); ok && basic.Kind()&types.String > 0 {
-		return true
-	}
-
-	slice, ok := t.(*types.Slice)
-	if !ok {
-		return false
-	}
-
-	basic, ok := slice.Elem().(*types.Basic)
-	return ok && basic.Kind()&types.Byte > 0
-}
-
-func typeIsUnderlying(base, derived types.Type) bool {
-	return reflect.DeepEqual(base, derived.Underlying())
 }

@@ -1,7 +1,6 @@
 package casts_pointers_to_underlying_type
 
 type Int int
-type IntPtr *int
 
 type A struct {
 	PtrToPtr *int
@@ -29,14 +28,4 @@ type B struct {
 
 	StrPtrToBytePtr *[]byte
 	BytePtrToStrPtr *string
-}
-
-type C struct {
-	IntPtrToInt IntPtr
-	IntToIntPtr Int
-}
-
-type D struct {
-	IntPtrToInt int
-	IntToIntPtr IntPtr
 }
