@@ -9,13 +9,3 @@ func MapAB(A) B {
 func MapBA(B) A {
 	return A{}
 }
-
-// MapCD map this pls
-func MapCD(C) D {
-	return D{}
-}
-
-// MapDC map this pls
-func MapDC(D) C {
-	return C{}
-}
