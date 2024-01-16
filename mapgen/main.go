@@ -97,7 +97,7 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			InIsPtr:  tfs.In.IsPtr,
 			OutType:  fileImports.ResolveTypeName(tfs.Out.Named),
 			OutIsPtr: tfs.Out.IsPtr,
-			Mappings: mappable,
+			Maps:     mappable,
 		}
 
 		newFuncDecl := edit.MapperFuncAst(fset, data)

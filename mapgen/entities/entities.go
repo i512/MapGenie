@@ -1,6 +1,8 @@
 package entities
 
-import "go/types"
+import (
+	"go/types"
+)
 
 type TargetFuncSignature struct {
 	In, Out Argument
@@ -22,4 +24,12 @@ func (s Argument) FieldMap() map[string]types.Type {
 	}
 
 	return result
+}
+
+type TypeNameResolver interface {
+	ResolveTypeName(types.Type) string
+}
+
+type MapExpression interface {
+	String(resolver TypeNameResolver) string
 }

@@ -5,6 +5,8 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"go/types"
+	"mapgenie/mapgen/entities"
 	"text/template"
 )
 
@@ -17,35 +19,8 @@ const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg
 	}
 	{{ end }}
 
-	{{- range .Mappings }}
-		{{- if and .InPtr .OutPtr }}
-			if input.{{ .InName }} != nil {
-				{{ .OutName }} := 
-					{{- if ne .CastWith "" }}{{ .CastWith }}({{- end }}
-					*input.{{ .InName }}
-					{{- if ne .CastWith "" }}){{- end }}
-
-				result.{{ .OutName }} = &{{ .OutName }}
-			}
-		{{- else if .InPtr }}
-			if input.{{ .InName }} != nil {
-				result.{{ .OutName }} ={{" "}}
-					{{- if ne .CastWith "" }}{{ .CastWith }}({{- end }}
-					*input.{{ .InName }}
-					{{- if ne .CastWith "" }}){{- end }}
-			}
-		{{- else }}
-			{{- if and .OutPtr (ne .CastWith "")}}
-				{{ .OutName }} := {{ .CastWith }}(input.{{ .InName }})
-				result.{{ .OutName }} = &{{ .OutName }}
-			{{- else }}
-				result.{{ .OutName }} ={{" "}}
-					{{- if ne .CastWith "" }}{{ .CastWith }}({{- end }}
-					{{- if .OutPtr }}&{{- end }}
-					{{- ""}}input.{{ .InName }}
-					{{- if ne .CastWith "" }}){{- end }}
-		   {{- end }}
-		{{- end }}
+	{{- range .Maps }}
+		{{ .String $.Resolver }}
 	{{- end }}
 
 	return {{ if .OutIsPtr }}&{{ end }}result
@@ -67,7 +42,13 @@ type MapTemplateData struct {
 	InputVar string
 	OutType  string
 	OutIsPtr bool
+	Resolver entities.TypeNameResolver
 	Mappings []TemplateMapping
+	Maps     []entities.MapExpression
+}
+
+type MapExpression struct {
+	In, Out types.Type
 }
 
 func (d MapTemplateData) InTypeArg() string {

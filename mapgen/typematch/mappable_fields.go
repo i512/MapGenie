@@ -9,10 +9,10 @@ import (
 	"reflect"
 )
 
-func MappableFields(tfs entities.TargetFuncSignature, imports *edit.FileImports) []edit.TemplateMapping {
+func MappableFields(tfs entities.TargetFuncSignature, imports *edit.FileImports) []entities.MapExpression {
 	in := tfs.In.FieldMap()
 
-	list := make([]edit.TemplateMapping, 0)
+	list := make([]entities.MapExpression, 0)
 
 	for i := 0; i < tfs.Out.Struct.NumFields(); i++ {
 		field := tfs.Out.Struct.Field(i)
@@ -41,7 +41,7 @@ func MappableFields(tfs entities.TargetFuncSignature, imports *edit.FileImports)
 	return list
 }
 
-func createMapping(fieldName string, in, out types.Type, imports *edit.FileImports) (edit.TemplateMapping, bool) {
+func createMapping(fieldName string, in, out types.Type, imports *edit.FileImports) (entities.MapExpression, bool) {
 	mapping := edit.TemplateMapping{
 		InName:  fieldName,
 		OutName: fieldName,
@@ -49,28 +49,36 @@ func createMapping(fieldName string, in, out types.Type, imports *edit.FileImpor
 
 	if typesAreCastable(in, out) {
 		mapping.CastWith = castWith(in, out, imports)
-		return mapping, true
+		return &edit.CastExpression{
+			Tm: mapping,
+		}, true
 	}
 
 	outPtr, ok := out.(*types.Pointer)
 	if ok && typesAreCastable(in, outPtr.Elem()) {
 		mapping.OutPtr = true
 		mapping.CastWith = castWith(in, outPtr.Elem(), imports)
-		return mapping, true
+		return &edit.CastValueToPointerExpression{
+			Tm: mapping,
+		}, true
 	}
 
 	inPtr, ok := in.(*types.Pointer)
 	if ok && typesAreCastable(inPtr.Elem(), out) {
 		mapping.InPtr = true
 		mapping.CastWith = castWith(inPtr.Elem(), out, imports)
-		return mapping, true
+		return &edit.CastPointerToValueExpression{
+			Tm: mapping,
+		}, true
 	}
 
 	if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
 		mapping.InPtr = true
 		mapping.OutPtr = true
 		mapping.CastWith = castWith(inPtr.Elem(), outPtr.Elem(), imports)
-		return mapping, true
+		return &edit.CastPointerToPointerExpression{
+			Tm: mapping,
+		}, true
 	}
 
 	if hasUnderlying(in) {
@@ -80,7 +88,7 @@ func createMapping(fieldName string, in, out types.Type, imports *edit.FileImpor
 		}
 	}
 
-	return edit.TemplateMapping{}, false
+	return nil, false
 }
 
 func typesAreCastable(in, out types.Type) bool {
