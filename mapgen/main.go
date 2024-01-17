@@ -89,7 +89,7 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 			return true
 		}
 
-		mappable := typematch.MappableFields(tfs, fileImports)
+		mappable := typematch.MappableFields(tfs)
 
 		data := gen.MapTemplateData{
 			FuncName: funcDecl.Name.Name,

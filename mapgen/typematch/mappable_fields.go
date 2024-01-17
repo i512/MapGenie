@@ -9,7 +9,7 @@ import (
 	"reflect"
 )
 
-func MappableFields(tfs entities.TargetFuncSignature, imports *gen.FileImports) []gen.MapExpression {
+func MappableFields(tfs entities.TargetFuncSignature) []gen.MapExpression {
 	in := tfs.In.FieldMap()
 
 	list := make([]gen.MapExpression, 0)
@@ -30,7 +30,7 @@ func MappableFields(tfs entities.TargetFuncSignature, imports *gen.FileImports) 
 			continue
 		}
 
-		mapping, ok := createMapping(outFieldName, inFieldType, outFieldType, imports)
+		mapping, ok := createMapping(outFieldName, inFieldType, outFieldType)
 		if !ok {
 			continue
 		}
@@ -41,7 +41,7 @@ func MappableFields(tfs entities.TargetFuncSignature, imports *gen.FileImports) 
 	return list
 }
 
-func createMapping(fieldName string, in, out types.Type, imports *gen.FileImports) (gen.MapExpression, bool) {
+func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, bool) {
 	base := gen.BaseExpression{
 		In:       in,
 		Out:      out,
@@ -68,7 +68,7 @@ func createMapping(fieldName string, in, out types.Type, imports *gen.FileImport
 	}
 
 	if hasUnderlying(in) {
-		mapping, ok := createMapping(fieldName, in.Underlying(), out, imports)
+		mapping, ok := createMapping(fieldName, in.Underlying(), out)
 		if ok {
 			return mapping, true
 		}
