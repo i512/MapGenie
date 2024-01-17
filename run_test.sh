@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 git checkout test/**/mapgen*.go
 go run ./mapgen/main.go ./test/...

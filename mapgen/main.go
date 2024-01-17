@@ -10,8 +10,8 @@ import (
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
-	"mapgenie/mapgen/edit"
 	"mapgenie/mapgen/entities"
+	"mapgenie/mapgen/gen"
 	"mapgenie/mapgen/typematch"
 	"os"
 	"regexp"
@@ -62,7 +62,7 @@ func main() {
 func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *packages.Package) {
 	toMapFuncRegex := regexp.MustCompile(`^(?:\w+) map this pls`)
 
-	fileImports := edit.NewFileImports(file, pkg)
+	fileImports := gen.NewFileImports(file, pkg)
 
 	astModified := false
 
@@ -91,16 +91,17 @@ func analyzePkgFile(fset *token.FileSet, file *ast.File, filePath string, pkg *p
 
 		mappable := typematch.MappableFields(tfs, fileImports)
 
-		data := edit.MapTemplateData{
+		data := gen.MapTemplateData{
 			FuncName: funcDecl.Name.Name,
 			InType:   fileImports.ResolveTypeName(tfs.In.Named),
 			InIsPtr:  tfs.In.IsPtr,
 			OutType:  fileImports.ResolveTypeName(tfs.Out.Named),
 			OutIsPtr: tfs.Out.IsPtr,
 			Maps:     mappable,
+			Resolver: fileImports,
 		}
 
-		newFuncDecl := edit.MapperFuncAst(fset, data)
+		newFuncDecl := gen.MapperFuncAst(fset, data)
 		funcDecl.Body = newFuncDecl.Body
 		funcDecl.Type.Params = newFuncDecl.Type.Params
 		funcDecl.Type.Results = newFuncDecl.Type.Results

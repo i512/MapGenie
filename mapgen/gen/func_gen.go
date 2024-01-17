@@ -1,12 +1,11 @@
-package edit
+package gen
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"go/types"
-	"mapgenie/mapgen/entities"
 	"text/template"
 )
 
@@ -19,21 +18,12 @@ const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg
 	}
 	{{ end }}
 
-	{{- range .Maps }}
-		{{ .String $.Resolver }}
+	{{- range .Mappings }}
+		{{ . }}
 	{{- end }}
 
 	return {{ if .OutIsPtr }}&{{ end }}result
 }`
-
-type TemplateMapping struct {
-	InName   string
-	InPtr    bool
-	OutName  string
-	OutPtr   bool
-	CastWith string
-	Cast     bool
-}
 
 type MapTemplateData struct {
 	FuncName string
@@ -42,13 +32,13 @@ type MapTemplateData struct {
 	InputVar string
 	OutType  string
 	OutIsPtr bool
-	Resolver entities.TypeNameResolver
-	Mappings []TemplateMapping
-	Maps     []entities.MapExpression
+	Resolver *FileImports
+	Mappings []string
+	Maps     []MapExpression
 }
 
-type MapExpression struct {
-	In, Out types.Type
+type MapExpression interface {
+	String(imports *FileImports) string
 }
 
 func (d MapTemplateData) InTypeArg() string {
@@ -68,6 +58,8 @@ func (d MapTemplateData) OutTypeArg() string {
 }
 
 func MapperFuncAst(fset *token.FileSet, data MapTemplateData) *ast.FuncDecl {
+	data.Mappings = generateExpressions(data)
+
 	t := template.Must(template.New("map").Parse(mapTemplate))
 	funcSource := bytes.NewBuffer(nil)
 	err := t.Execute(funcSource, data)
@@ -75,6 +67,7 @@ func MapperFuncAst(fset *token.FileSet, data MapTemplateData) *ast.FuncDecl {
 		panic(err)
 	}
 
+	fmt.Println(funcSource.String())
 	file, err := parser.ParseFile(fset, "mapgenie_temp.go", "package main\n"+funcSource.String(), 0)
 	if err != nil {
 		panic(err)
@@ -82,4 +75,13 @@ func MapperFuncAst(fset *token.FileSet, data MapTemplateData) *ast.FuncDecl {
 	fset.RemoveFile(fset.File(file.Pos()))
 
 	return file.Decls[0].(*ast.FuncDecl)
+}
+
+func generateExpressions(data MapTemplateData) []string {
+	results := make([]string, len(data.Maps))
+	for i, m := range data.Maps {
+		results[i] = m.String(data.Resolver)
+	}
+
+	return results
 }
