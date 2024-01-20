@@ -77,6 +77,10 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 		return gen.NewCastPtrToPtr(base), true
 	}
 
+	if CheckImplementsStringer(in) && typeIsString(out) {
+		return gen.NewAssignStringer(base), true
+	}
+
 	return nil, false
 }
 
@@ -96,10 +100,15 @@ func typeIsIntegerOrFloat(t types.Type) bool {
 }
 
 func typeIsStringOrByteSlice(t types.Type) bool {
-	if basic, ok := t.(*types.Basic); ok && basic.Kind()&types.String > 0 {
-		return true
-	}
+	return typeIsString(t) || typeIsByteSlice(t)
+}
 
+func typeIsString(t types.Type) bool {
+	basic, ok := t.(*types.Basic)
+	return ok && basic.Kind()&types.String > 0
+}
+
+func typeIsByteSlice(t types.Type) bool {
 	slice, ok := t.(*types.Slice)
 	if !ok {
 		return false
