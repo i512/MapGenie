@@ -11,8 +11,8 @@ type A struct {
 }
 
 type B struct {
-	IntPtrToInt         Int
-	IntToIntPtr         IntPtr
+	IntPtrToInt         int
+	IntToIntPtr         *int
 	IntTypeToIntPtrType IntPtr
 	IntPtrTypeToIntType Int
 }

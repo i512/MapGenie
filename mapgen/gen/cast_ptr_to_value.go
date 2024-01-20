@@ -1,12 +1,12 @@
 package gen
 
 type CastPtrToValue struct {
-	BaseExpression
+	BaseMapStatement
 	CastWith string
 }
 
-func NewCastPtrToValue(base BaseExpression) *CastPtrToValue {
-	return &CastPtrToValue{BaseExpression: base}
+func NewCastPtrToValue(base BaseMapStatement) *CastPtrToValue {
+	return &CastPtrToValue{BaseMapStatement: base}
 }
 
 func (c *CastPtrToValue) String(resolver *FileImports) string {

@@ -8,12 +8,12 @@ import (
 	"text/template"
 )
 
-type BaseExpression struct {
+type BaseMapStatement struct {
 	In, Out           types.Type
 	InField, OutField string
 }
 
-func (e BaseExpression) CastExpression(in, out types.Type, imports entities.TypeNameResolver) string {
+func (e BaseMapStatement) CastExpression(in, out types.Type, imports entities.TypeNameResolver) string {
 	if reflect.DeepEqual(in, out) {
 		return "" // same type, no cast needed
 	}
@@ -21,7 +21,7 @@ func (e BaseExpression) CastExpression(in, out types.Type, imports entities.Type
 	return imports.ResolveTypeName(out)
 }
 
-func (e BaseExpression) RunTemplate(exp any, temp string) string {
+func (e BaseMapStatement) RunTemplate(exp any, temp string) string {
 	t := template.Must(template.New("map_expression").Parse(temp))
 	buf := bytes.NewBuffer(nil)
 

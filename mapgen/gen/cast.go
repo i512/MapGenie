@@ -1,12 +1,12 @@
 package gen
 
 type Cast struct {
-	BaseExpression
+	BaseMapStatement
 	CastWith string
 }
 
-func NewCast(base BaseExpression) *Cast {
-	return &Cast{BaseExpression: base}
+func NewCast(base BaseMapStatement) *Cast {
+	return &Cast{BaseMapStatement: base}
 }
 
 func (c *Cast) String(resolver *FileImports) string {

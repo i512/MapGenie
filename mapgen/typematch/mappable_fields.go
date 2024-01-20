@@ -42,7 +42,7 @@ func MappableFields(tfs entities.TargetFuncSignature) []gen.MapExpression {
 }
 
 func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, bool) {
-	base := gen.BaseExpression{
+	base := gen.BaseMapStatement{
 		In:       in,
 		Out:      out,
 		InField:  fieldName,
@@ -56,6 +56,11 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 	outPtr, ok := out.(*types.Pointer)
 	if ok && typesAreCastable(in, outPtr.Elem()) {
 		return gen.NewCastValueToPtr(base), true
+	}
+
+	outPtr, ok = out.Underlying().(*types.Pointer)
+	if ok && typesAreCastable(in, outPtr.Elem()) {
+		return gen.NewCastValueToPtrType(base), true
 	}
 
 	inPtr, ok := in.(*types.Pointer)

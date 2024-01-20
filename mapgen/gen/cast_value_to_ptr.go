@@ -5,12 +5,12 @@ import (
 )
 
 type CastValueToPtr struct {
-	BaseExpression
+	BaseMapStatement
 	CastWith string
 }
 
-func NewCastValueToPtr(base BaseExpression) *CastValueToPtr {
-	return &CastValueToPtr{BaseExpression: base}
+func NewCastValueToPtr(base BaseMapStatement) *CastValueToPtr {
+	return &CastValueToPtr{BaseMapStatement: base}
 }
 
 func (c *CastValueToPtr) String(resolver *FileImports) string {
