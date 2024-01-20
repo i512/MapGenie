@@ -68,15 +68,13 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 		return gen.NewCastPtrToValue(base), true
 	}
 
-	if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
-		return gen.NewCastPtrToPtr(base), true
+	inPtr, ok = in.Underlying().(*types.Pointer)
+	if ok && typesAreCastable(inPtr.Elem(), out) {
+		return gen.NewCastPtrToValue(base), true
 	}
 
-	if hasUnderlying(in) {
-		mapping, ok := createMapping(fieldName, in.Underlying(), out)
-		if ok {
-			return mapping, true
-		}
+	if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
+		return gen.NewCastPtrToPtr(base), true
 	}
 
 	return nil, false
@@ -109,10 +107,6 @@ func typeIsStringOrByteSlice(t types.Type) bool {
 
 	basic, ok := slice.Elem().(*types.Basic)
 	return ok && basic.Kind()&types.Byte > 0
-}
-
-func hasUnderlying(t types.Type) bool {
-	return t != t.Underlying()
 }
 
 func getUnderlying(t types.Type) types.Type {
