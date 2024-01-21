@@ -1,4 +1,4 @@
-package casts_numbers_to_string
+package structs
 
 type A struct {
 	Int    int
