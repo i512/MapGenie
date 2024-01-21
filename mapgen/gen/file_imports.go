@@ -54,7 +54,7 @@ func (f *FileImports) ResolveTypeName(t types.Type) string {
 
 	pkgPath, objName := parts[0], parts[1]
 
-	name := f.PkgImportAlias(pkgPath)
+	name := f.ResolvePkgImport(pkgPath)
 	if name == "" {
 		return objName
 	}
@@ -62,7 +62,7 @@ func (f *FileImports) ResolveTypeName(t types.Type) string {
 	return name + "." + objName
 }
 
-func (f *FileImports) PkgImportAlias(pkgPath string) string {
+func (f *FileImports) ResolvePkgImport(pkgPath string) string {
 	if name, ok := f.importMap[pkgPath]; ok {
 		return name
 	}

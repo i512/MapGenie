@@ -11,6 +11,9 @@ type A struct {
 	Uint16 uint16
 	Uint32 uint32
 	Uint64 uint64
+
+	Float64 float64
+	Float32 float32
 }
 
 type B struct {
@@ -24,4 +27,7 @@ type B struct {
 	Uint16 string
 	Uint32 string
 	Uint64 string
+
+	Float64 string
+	Float32 string
 }

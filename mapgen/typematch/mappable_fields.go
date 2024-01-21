@@ -81,6 +81,10 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 		return gen.NewAssignStringer(base), true
 	}
 
+	if typeIsIntegerOrFloat(in) && typeIsString(out) {
+		return gen.NewAssignNumberToString(base), true
+	}
+
 	return nil, false
 }
 
@@ -105,7 +109,7 @@ func typeIsStringOrByteSlice(t types.Type) bool {
 
 func typeIsString(t types.Type) bool {
 	basic, ok := t.(*types.Basic)
-	return ok && basic.Kind()&types.String > 0
+	return ok && basic.Info()&types.IsString > 0
 }
 
 func typeIsByteSlice(t types.Type) bool {
