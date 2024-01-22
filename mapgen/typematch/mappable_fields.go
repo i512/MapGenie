@@ -85,6 +85,10 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 		return gen.NewAssignNumberToString(base), true
 	}
 
+	if typeIsString(in) && typeIsIntegerOrFloat(out) {
+		return gen.NewParseNumberFromString(base), true
+	}
+
 	return nil, false
 }
 
