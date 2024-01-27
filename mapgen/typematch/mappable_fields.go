@@ -93,6 +93,10 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 		return gen.NewTimeToNumber(base), true
 	}
 
+	if isBasic(in, types.Int, types.Int64) && isTime(out) {
+		return gen.NewNumberToTime(base), true
+	}
+
 	return nil, false
 }
 

@@ -15,3 +15,15 @@ func TestMapAB(t *testing.T) {
 	assert.Equal(t, int(orig.TimeToInt.Unix()), dest.TimeToInt)
 	assert.Equal(t, orig.TimeToInt.Unix(), dest.TimeToInt64)
 }
+
+func TestMapBA(t *testing.T) {
+	tt := time.Date(2024, 01, 01, 0, 0, 0, 0, time.UTC)
+	orig := B{
+		TimeToInt:   int(tt.Unix()),
+		TimeToInt64: tt.Add(time.Second).Unix(),
+	}
+
+	dest := MapBA(orig)
+	assert.Equal(t, tt, dest.TimeToInt)
+	assert.Equal(t, tt.Add(time.Second), dest.TimeToInt64)
+}
