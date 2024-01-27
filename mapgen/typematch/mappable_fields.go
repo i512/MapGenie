@@ -89,7 +89,26 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 		return gen.NewParseNumberFromString(base), true
 	}
 
+	if isTime(in) && isBasic(out, types.Int, types.Int64) {
+		return gen.NewTimeToNumber(base), true
+	}
+
 	return nil, false
+}
+
+func isBasic(t types.Type, kinds ...types.BasicKind) bool {
+	basic, ok := t.(*types.Basic)
+	if !ok {
+		return false
+	}
+
+	for _, kind := range kinds {
+		if basic.Kind() == kind {
+			return true
+		}
+	}
+
+	return false
 }
 
 func typesAreCastable(in, out types.Type) bool {
@@ -131,4 +150,8 @@ func getUnderlying(t types.Type) types.Type {
 		t = t.Underlying()
 	}
 	return t
+}
+
+func isTime(t types.Type) bool {
+	return t.String() == "time.Time"
 }

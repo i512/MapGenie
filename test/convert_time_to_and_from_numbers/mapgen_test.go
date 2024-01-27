@@ -13,5 +13,5 @@ func TestMapAB(t *testing.T) {
 	}
 	dest := MapAB(orig)
 	assert.Equal(t, int(orig.TimeToInt.Unix()), dest.TimeToInt)
-	assert.Equal(t, (orig.TimeToInt.Unix()), dest.TimeToInt64)
+	assert.Equal(t, orig.TimeToInt.Unix(), dest.TimeToInt64)
 }
