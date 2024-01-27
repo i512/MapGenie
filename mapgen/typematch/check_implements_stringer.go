@@ -46,5 +46,5 @@ func isStringerMethod(iface interface{}) bool {
 		return false
 	}
 
-	return typeIsString(signature.Results().At(0).Type())
+	return isString(signature.Results().At(0).Type())
 }

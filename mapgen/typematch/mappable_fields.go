@@ -77,15 +77,11 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 		return gen.NewCastPtrToPtr(base), true
 	}
 
-	if CheckImplementsStringer(in) && typeIsString(out) {
-		return gen.NewAssignStringer(base), true
-	}
-
-	if typeIsIntegerOrFloat(in) && typeIsString(out) {
+	if typeIsIntegerOrFloat(in) && isString(out) {
 		return gen.NewAssignNumberToString(base), true
 	}
 
-	if typeIsString(in) && typeIsIntegerOrFloat(out) {
+	if isString(in) && typeIsIntegerOrFloat(out) {
 		return gen.NewParseNumberFromString(base), true
 	}
 
@@ -95,6 +91,14 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 
 	if isBasic(in, types.Int, types.Int64) && isTime(out) {
 		return gen.NewNumberToTime(base), true
+	}
+
+	if isTime(in) && isString(out) {
+		return gen.NewTimeToString(base), true
+	}
+
+	if CheckImplementsStringer(in) && isString(out) {
+		return gen.NewAssignStringer(base), true
 	}
 
 	return nil, false
@@ -131,12 +135,11 @@ func typeIsIntegerOrFloat(t types.Type) bool {
 }
 
 func typeIsStringOrByteSlice(t types.Type) bool {
-	return typeIsString(t) || typeIsByteSlice(t)
+	return isString(t) || typeIsByteSlice(t)
 }
 
-func typeIsString(t types.Type) bool {
-	basic, ok := t.(*types.Basic)
-	return ok && basic.Info()&types.IsString > 0
+func isString(t types.Type) bool {
+	return isBasic(t, types.String)
 }
 
 func typeIsByteSlice(t types.Type) bool {
