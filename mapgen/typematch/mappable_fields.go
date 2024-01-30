@@ -97,6 +97,10 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 		return gen.NewTimeToString(base), true
 	}
 
+	if isString(in) && isTime(out) {
+		return gen.NewParseTimeFromString(base), true
+	}
+
 	if CheckImplementsStringer(in) && isString(out) {
 		return gen.NewAssignStringer(base), true
 	}
