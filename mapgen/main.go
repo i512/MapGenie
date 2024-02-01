@@ -81,7 +81,6 @@ func analyzePkgFile(ctx context.Context, fset *token.FileSet, file *ast.File, pk
 			return true
 		}
 
-		log.Infof(ctx, "Mapper found: %s", funcDecl.Name)
 		processMapper(ctx, pkg, fset, funcDecl, fileImports)
 
 		astModified = true
@@ -103,7 +102,7 @@ func processMapper(
 	funcDecl *ast.FuncDecl,
 	imports *gen.FileImports,
 ) (astModified bool) {
-	ctx = log.Suppress(ctx, log.Error, nil)
+	ctx = log.Fold(ctx, "Mapper found: %s", funcDecl.Name)
 
 	tfs, err := getInputOutputTypes(funcDecl, pkg)
 	if errors.Is(err, ErrFuncMismatchError) {

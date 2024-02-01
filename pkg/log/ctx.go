@@ -20,34 +20,6 @@ func Ctx(ctx context.Context, lvl LogLevel, writer io.Writer) context.Context {
 	return context.WithValue(ctx, key, l)
 }
 
-func Suppress(ctx context.Context, unsuppressOn LogLevel, f func(context.Context)) context.Context {
-	if f == nil {
-		f = func(ctx context.Context) {}
-	}
-
-	l, ok := ctx.Value(key).(*Logger)
-	if !ok {
-		fmt.Println("No log in ctx")
-		f(ctx)
-		return ctx
-	}
-
-	newLogger := &Logger{
-		level:        l.level,
-		io:           l.io,
-		suppressing:  true,
-		unsuppressOn: unsuppressOn,
-		parent:       l,
-		prefix:       l.prefix + "  ",
-	}
-
-	newCtx := context.WithValue(ctx, key, newLogger)
-
-	f(newCtx)
-
-	return newCtx
-}
-
 func Fold(ctx context.Context, format string, args ...any) context.Context {
 	l, ok := ctx.Value(key).(*Logger)
 	if !ok {
@@ -56,13 +28,13 @@ func Fold(ctx context.Context, format string, args ...any) context.Context {
 	}
 
 	newLogger := &Logger{
-		level:        l.level,
-		io:           l.io,
-		suppressing:  true,
-		unsuppressOn: Error,
-		parent:       l,
-		prefix:       l.prefix + "  ",
-		suppressed: []Row{
+		level:    l.level,
+		io:       l.io,
+		folding:  true,
+		unfoldOn: Error,
+		parent:   l,
+		prefix:   l.prefix + "  ",
+		folded: []Row{
 			{
 				time:  time.Now(),
 				level: Info,

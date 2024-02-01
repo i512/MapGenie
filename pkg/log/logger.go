@@ -24,14 +24,14 @@ type Row struct {
 }
 
 type Logger struct {
-	level        LogLevel
-	io           io.Writer
-	suppressing  bool
-	suppressed   []Row
-	unsuppressOn LogLevel
-	mux          sync.Mutex
-	parent       *Logger
-	prefix       string
+	level    LogLevel
+	io       io.Writer
+	folding  bool
+	folded   []Row
+	unfoldOn LogLevel
+	mux      sync.Mutex
+	parent   *Logger
+	prefix   string
 }
 
 func (l *Logger) Logf(lvl LogLevel, format string, args ...any) {
@@ -42,12 +42,12 @@ func (l *Logger) do(r Row) {
 	l.mux.Lock()
 	defer l.mux.Unlock()
 
-	if l.suppressing && r.level == l.unsuppressOn {
-		l.unsuppress(nil)
+	if l.folding && r.level == l.unfoldOn {
+		l.unfold(nil)
 	}
 
-	if l.suppressing {
-		l.suppressed = append(l.suppressed, r)
+	if l.folding {
+		l.folded = append(l.folded, r)
 		return
 	}
 
@@ -75,22 +75,22 @@ func (l *Logger) levelShort(lvl LogLevel) string {
 	return "?"
 }
 
-func (l *Logger) unsuppress(rows []Row) {
-	l.suppressing = false
+func (l *Logger) unfold(rows []Row) {
+	l.folding = false
 	l.level = Debug
 
 	if l.parent != nil {
-		l.parent.unsuppress(append(l.suppressed, rows...))
-		l.suppressed = nil
+		l.parent.unfold(append(l.folded, rows...))
+		l.folded = nil
 		return
 	}
 
-	l.suppressed = append(l.suppressed, rows...)
-	sort.SliceStable(l.suppressed, func(i, j int) bool { return l.suppressed[i].time.Before(l.suppressed[j].time) })
+	l.folded = append(l.folded, rows...)
+	sort.SliceStable(l.folded, func(i, j int) bool { return l.folded[i].time.Before(l.folded[j].time) })
 
-	for _, r := range l.suppressed {
+	for _, r := range l.folded {
 		l.print(r)
 	}
 
-	l.suppressed = nil
+	l.folded = nil
 }
