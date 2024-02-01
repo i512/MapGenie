@@ -2,7 +2,6 @@ package gen
 
 import (
 	"bytes"
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -67,7 +66,6 @@ func MapperFuncAst(fset *token.FileSet, data MapTemplateData) *ast.FuncDecl {
 		panic(err)
 	}
 
-	fmt.Println(funcSource.String())
 	file, err := parser.ParseFile(fset, "mapgenie_temp.go", "package main\n"+funcSource.String(), 0)
 	if err != nil {
 		panic(err)

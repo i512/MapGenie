@@ -1,15 +1,16 @@
 package typematch
 
 import (
-	"fmt"
+	"context"
 	"go/token"
 	"go/types"
 	"mapgenie/mapgen/entities"
 	"mapgenie/mapgen/gen"
+	"mapgenie/pkg/log"
 	"reflect"
 )
 
-func MappableFields(tfs entities.TargetFuncSignature) []gen.MapExpression {
+func MappableFields(ctx context.Context, tfs entities.TargetFuncSignature) []gen.MapExpression {
 	in := tfs.In.FieldMap()
 
 	list := make([]gen.MapExpression, 0)
@@ -21,12 +22,12 @@ func MappableFields(tfs entities.TargetFuncSignature) []gen.MapExpression {
 
 		inFieldType, ok := in[outFieldName]
 		if !ok {
-			fmt.Println("no matching field for ", outFieldName)
+			log.Debugf(ctx, "No matching field for: %s", outFieldName)
 			continue
 		}
 
 		if !token.IsExported(outFieldName) && !(tfs.In.Local && tfs.Out.Local) {
-			fmt.Println("output field is unexported ", outFieldName)
+			log.Debugf(ctx, "Output field is unexported: %s", outFieldName)
 			continue
 		}
 
