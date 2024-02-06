@@ -12,7 +12,7 @@ func NewNumberToTime(base BaseMapStatement) *NumberToTime {
 	return &NumberToTime{BaseMapStatement: base}
 }
 
-func (c *NumberToTime) String(resolver *FileImports) string {
+func (c *NumberToTime) Generate(resolver *FileImports) (string, error) {
 	c.TimeName = resolver.ResolvePkgImport("time")
 
 	if b, ok := c.In.(*types.Basic); ok && b.Kind() != types.Int64 {

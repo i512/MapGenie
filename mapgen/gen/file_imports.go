@@ -1,12 +1,14 @@
 package gen
 
 import (
+	"context"
 	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
+	"mapgenie/pkg/log"
 	"strings"
 )
 
@@ -49,7 +51,7 @@ func (f *FileImports) ResolveTypeName(t types.Type) string {
 		return globalName
 	}
 	if len(parts) != 2 {
-		panic("could not detect obj name")
+		log.Fatalf(context.Background(), "cannot parse object name: %s", globalName)
 	}
 
 	pkgPath, objName := parts[0], parts[1]
@@ -92,7 +94,8 @@ func (f *FileImports) resolvePkgNameCollision(name string, pkgPath string) strin
 		}
 	}
 
-	panic("shame")
+	log.Fatalf(context.Background(), "could not find an available name to use for: %s", name)
+	return ""
 }
 
 func (f *FileImports) checkNameAvailable(name string, pkgPath string) bool {

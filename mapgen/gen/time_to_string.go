@@ -11,7 +11,7 @@ func NewTimeToString(base BaseMapStatement) *TimeToString {
 	return &TimeToString{BaseMapStatement: base, Format: "RFC3339"}
 }
 
-func (c *TimeToString) String(resolver *FileImports) string {
+func (c *TimeToString) Generate(resolver *FileImports) (string, error) {
 	c.TimeName = resolver.ResolvePkgImport("time")
 	sourceTemplate := `result.{{ .OutField }} = input.{{ .InField }}.Format({{ .TimeName }}.{{ .Format }})`
 

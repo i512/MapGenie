@@ -2,6 +2,7 @@ package gen
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -37,7 +38,7 @@ type MapTemplateData struct {
 }
 
 type MapExpression interface {
-	String(imports *FileImports) string
+	Generate(imports *FileImports) (string, error)
 }
 
 func (d MapTemplateData) InTypeArg() string {
@@ -56,30 +57,40 @@ func (d MapTemplateData) OutTypeArg() string {
 	return d.OutType
 }
 
-func MapperFuncAst(fset *token.FileSet, data MapTemplateData) *ast.FuncDecl {
-	data.Mappings = generateExpressions(data)
+func MapperFuncAst(fset *token.FileSet, data MapTemplateData) (*ast.FuncDecl, error) {
+	mappings, err := generateExpressions(data)
+	if err != nil {
+		return nil, err
+	}
+
+	data.Mappings = mappings
 
 	t := template.Must(template.New("map").Parse(mapTemplate))
 	funcSource := bytes.NewBuffer(nil)
-	err := t.Execute(funcSource, data)
+	err = t.Execute(funcSource, data)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("func template generation: %w", err)
 	}
 
 	file, err := parser.ParseFile(fset, "mapgenie_temp.go", "package main\n"+funcSource.String(), 0)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("parse generated fragment: %w", err)
 	}
 	fset.RemoveFile(fset.File(file.Pos()))
 
-	return file.Decls[0].(*ast.FuncDecl)
+	return file.Decls[0].(*ast.FuncDecl), nil
 }
 
-func generateExpressions(data MapTemplateData) []string {
+func generateExpressions(data MapTemplateData) ([]string, error) {
 	results := make([]string, len(data.Maps))
 	for i, m := range data.Maps {
-		results[i] = m.String(data.Resolver)
+		code, err := m.Generate(data.Resolver)
+		if err != nil {
+			return nil, fmt.Errorf("%+v fragment generation: %w", m, err)
+		}
+
+		results[i] = code
 	}
 
-	return results
+	return results, nil
 }

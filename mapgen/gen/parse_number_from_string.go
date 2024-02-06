@@ -13,7 +13,7 @@ func NewParseNumberFromString(base BaseMapStatement) *ParseNumberFromString {
 	return &ParseNumberFromString{BaseMapStatement: base}
 }
 
-func (c *ParseNumberFromString) String(resolver *FileImports) string {
+func (c *ParseNumberFromString) Generate(resolver *FileImports) (string, error) {
 	c.StrconvName = resolver.ResolvePkgImport("strconv")
 	c.ConvFunc, c.FuncArgs = c.funcAndArgs()
 
@@ -73,7 +73,6 @@ func (c *ParseNumberFromString) funcAndArgs() (string, string) {
 
 func (c *ParseNumberFromString) IntBits(basic *types.Basic) string {
 	switch basic.Kind() {
-
 	case types.Int8, types.Uint8:
 		return "8"
 	case types.Int16, types.Uint16:
@@ -82,7 +81,7 @@ func (c *ParseNumberFromString) IntBits(basic *types.Basic) string {
 		return "32"
 	case types.Int, types.Uint, types.Int64, types.Uint64:
 		return "64"
+	default:
+		return ""
 	}
-
-	return ""
 }

@@ -9,7 +9,7 @@ func NewAssignNumberToString(base BaseMapStatement) *AssignNumberToString {
 	return &AssignNumberToString{BaseMapStatement: base}
 }
 
-func (c *AssignNumberToString) String(resolver *FileImports) string {
+func (c *AssignNumberToString) Generate(resolver *FileImports) (string, error) {
 	c.FmtName = resolver.ResolvePkgImport("fmt")
 
 	sourceTemplate :=

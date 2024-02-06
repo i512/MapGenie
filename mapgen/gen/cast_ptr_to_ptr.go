@@ -13,7 +13,7 @@ func NewCastPtrToPtr(base BaseMapStatement) *CastPtrToPtr {
 	return &CastPtrToPtr{BaseMapStatement: base}
 }
 
-func (c *CastPtrToPtr) String(resolver *FileImports) string {
+func (c *CastPtrToPtr) Generate(resolver *FileImports) (string, error) {
 	sourceTemplate :=
 		`if input.{{ .InField }} != nil {
 			{{ .OutField }} := 

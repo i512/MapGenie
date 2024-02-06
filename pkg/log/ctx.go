@@ -62,6 +62,10 @@ func Errorf(ctx context.Context, format string, args ...any) {
 	logf(ctx, Error, format, args...)
 }
 
+func Fatalf(ctx context.Context, format string, args ...any) {
+	logf(ctx, Fatal, format, args...)
+}
+
 func logf(ctx context.Context, lvl LogLevel, format string, args ...any) {
 	l, ok := ctx.Value(key).(*Logger)
 	if !ok {

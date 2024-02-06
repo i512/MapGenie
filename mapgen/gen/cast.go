@@ -9,7 +9,7 @@ func NewCast(base BaseMapStatement) *Cast {
 	return &Cast{BaseMapStatement: base}
 }
 
-func (c *Cast) String(resolver *FileImports) string {
+func (c *Cast) Generate(resolver *FileImports) (string, error) {
 	c.CastWith = c.CastExpression(c.In, c.Out, resolver)
 	sourceTemplate :=
 		`result.{{ .OutField }} = 

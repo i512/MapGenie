@@ -65,7 +65,7 @@ func main() {
 func analyzePkgFile(ctx context.Context, fset *token.FileSet, file *ast.File, pkg *packages.Package) {
 	ctx = log.Fold(ctx, "Analysing file: %s", fset.File(file.Pos()).Name())
 
-	toMapFuncRegex := regexp.MustCompile(`^(?:\w+) map this pls`)
+	toMapFuncRegex := regexp.MustCompile(`^\w+ map this pls`)
 
 	fileImports := gen.NewFileImports(file, pkg)
 
@@ -91,7 +91,10 @@ func analyzePkgFile(ctx context.Context, fset *token.FileSet, file *ast.File, pk
 	if astModified {
 		fileImports.WriteImportsToAst(fset, file)
 
-		modifyFile(fset, file)
+		err := modifyFile(fset, file)
+		if err != nil {
+			log.Errorf(ctx, "Failed to change file: %s", err.Error())
+		}
 	}
 }
 
@@ -126,7 +129,12 @@ func processMapper(
 		Resolver: imports,
 	}
 
-	newFuncDecl := gen.MapperFuncAst(fset, data)
+	newFuncDecl, err := gen.MapperFuncAst(fset, data)
+	if err != nil {
+		log.Errorf(ctx, "Generation failed: %s", err.Error())
+		return false
+	}
+
 	funcDecl.Body = newFuncDecl.Body
 	funcDecl.Type.Params = newFuncDecl.Type.Params
 	funcDecl.Type.Results = newFuncDecl.Type.Results
@@ -134,19 +142,16 @@ func processMapper(
 	return true
 }
 
-func modifyFile(fset *token.FileSet, file *ast.File) {
+func modifyFile(fset *token.FileSet, file *ast.File) error {
 	path := fset.Position(file.Pos()).Filename
 
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0755) // read existing permissions?
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0) // read existing permissions?
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer f.Close()
 
-	err = format.Node(f, fset, file)
-	if err != nil {
-		panic(err)
-	}
+	return format.Node(f, fset, file)
 }
 
 var ErrFuncMismatchError = fmt.Errorf("function is not mappable")

@@ -13,7 +13,7 @@ func NewParseTimeFromString(base BaseMapStatement) *ParseTimeFromString {
 	}
 }
 
-func (c *ParseTimeFromString) String(resolver *FileImports) string {
+func (c *ParseTimeFromString) Generate(resolver *FileImports) (string, error) {
 	c.TimeName = resolver.ResolvePkgImport("time")
 
 	sourceTemplate := `

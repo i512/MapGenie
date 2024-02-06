@@ -15,6 +15,7 @@ const (
 	Info
 	Warn
 	Error
+	Fatal
 )
 
 type Row struct {
@@ -42,7 +43,7 @@ func (l *Logger) do(r Row) {
 	l.mux.Lock()
 	defer l.mux.Unlock()
 
-	if l.folding && r.level == l.unfoldOn {
+	if l.folding && r.level >= l.unfoldOn {
 		l.unfold(nil)
 	}
 
@@ -54,14 +55,23 @@ func (l *Logger) do(r Row) {
 	if r.level >= l.level {
 		l.print(r)
 	}
+
+	if r.level == Fatal {
+		panic("fatalf called: " + r.str)
+	}
 }
 
 func (l *Logger) print(r Row) {
-	fmt.Fprintf(l.io, "%s%s\n", l.levelShort(r.level), r.str)
+	_, err := fmt.Fprintf(l.io, "%s%s\n", l.levelShort(r.level), r.str)
+	if err != nil {
+		panic("failed to print log: " + err.Error())
+	}
 }
 
 func (l *Logger) levelShort(lvl LogLevel) string {
 	switch lvl {
+	case Fatal:
+		return "F"
 	case Error:
 		return "E"
 	case Warn:
