@@ -1,4 +1,4 @@
-package gen
+package fragments
 
 type Cast struct {
 	BaseMapStatement
@@ -9,8 +9,8 @@ func NewCast(base BaseMapStatement) *Cast {
 	return &Cast{BaseMapStatement: base}
 }
 
-func (c *Cast) Generate(resolver *FileImports) (string, error) {
-	c.CastWith = c.CastExpression(c.In, c.Out, resolver)
+func (c *Cast) Generate(g *GenerationCtx) (string, error) {
+	c.CastWith = c.CastExpression(c.In, c.Out, g.NameResolver)
 	sourceTemplate :=
 		`result.{{ .OutField }} = 
 			 {{- if ne .CastWith "" }}{{ .CastWith }}({{- end }}

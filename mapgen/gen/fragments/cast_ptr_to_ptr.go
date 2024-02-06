@@ -1,4 +1,4 @@
-package gen
+package fragments
 
 import (
 	"go/types"
@@ -13,7 +13,7 @@ func NewCastPtrToPtr(base BaseMapStatement) *CastPtrToPtr {
 	return &CastPtrToPtr{BaseMapStatement: base}
 }
 
-func (c *CastPtrToPtr) Generate(resolver *FileImports) (string, error) {
+func (c *CastPtrToPtr) Generate(g *GenerationCtx) (string, error) {
 	sourceTemplate :=
 		`if input.{{ .InField }} != nil {
 			{{ .OutField }} := 
@@ -27,7 +27,7 @@ func (c *CastPtrToPtr) Generate(resolver *FileImports) (string, error) {
 	c.CastWith = c.CastExpression(
 		c.In.(*types.Pointer).Elem(),
 		c.Out.(*types.Pointer).Elem(),
-		resolver,
+		g.NameResolver,
 	)
 	return c.RunTemplate(c, sourceTemplate)
 }

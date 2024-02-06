@@ -1,4 +1,4 @@
-package gen
+package fragments
 
 type CastPtrToValue struct {
 	BaseMapStatement
@@ -9,7 +9,7 @@ func NewCastPtrToValue(base BaseMapStatement) *CastPtrToValue {
 	return &CastPtrToValue{BaseMapStatement: base}
 }
 
-func (c *CastPtrToValue) Generate(resolver *FileImports) (string, error) {
+func (c *CastPtrToValue) Generate(g *GenerationCtx) (string, error) {
 	sourceTemplate :=
 		`if input.{{ .InField }} != nil {
 			result.{{ .OutField }} ={{" "}}
@@ -18,6 +18,6 @@ func (c *CastPtrToValue) Generate(resolver *FileImports) (string, error) {
 				 {{- if ne .CastWith "" }}){{- end }}
 		}`
 
-	c.CastWith = resolver.ResolveTypeName(c.Out)
+	c.CastWith = g.NameResolver.ResolveTypeName(c.Out)
 	return c.RunTemplate(c, sourceTemplate)
 }

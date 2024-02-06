@@ -1,4 +1,4 @@
-package gen
+package fragments
 
 import "go/types"
 
@@ -12,8 +12,8 @@ func NewNumberToTime(base BaseMapStatement) *NumberToTime {
 	return &NumberToTime{BaseMapStatement: base}
 }
 
-func (c *NumberToTime) Generate(resolver *FileImports) (string, error) {
-	c.TimeName = resolver.ResolvePkgImport("time")
+func (c *NumberToTime) Generate(g *GenerationCtx) (string, error) {
+	c.TimeName = g.NameResolver.ResolvePkgImport("time")
 
 	if b, ok := c.In.(*types.Basic); ok && b.Kind() != types.Int64 {
 		c.CastWith = "int64"

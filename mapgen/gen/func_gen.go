@@ -2,10 +2,12 @@ package gen
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"mapgenie/mapgen/gen/fragments"
 	"text/template"
 )
 
@@ -34,11 +36,11 @@ type MapTemplateData struct {
 	OutIsPtr bool
 	Resolver *FileImports
 	Mappings []string
-	Maps     []MapExpression
+	Maps     []MapStatement
 }
 
-type MapExpression interface {
-	Generate(imports *FileImports) (string, error)
+type MapStatement interface {
+	Generate(*fragments.GenerationCtx) (string, error)
 }
 
 func (d MapTemplateData) InTypeArg() string {
@@ -57,8 +59,8 @@ func (d MapTemplateData) OutTypeArg() string {
 	return d.OutType
 }
 
-func MapperFuncAst(fset *token.FileSet, data MapTemplateData) (*ast.FuncDecl, error) {
-	mappings, err := generateExpressions(data)
+func MapperFuncAst(ctx context.Context, fset *token.FileSet, data MapTemplateData) (*ast.FuncDecl, error) {
+	mappings, err := generateExpressions(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -81,10 +83,15 @@ func MapperFuncAst(fset *token.FileSet, data MapTemplateData) (*ast.FuncDecl, er
 	return file.Decls[0].(*ast.FuncDecl), nil
 }
 
-func generateExpressions(data MapTemplateData) ([]string, error) {
+func generateExpressions(ctx context.Context, data MapTemplateData) ([]string, error) {
+	generationCtx := &fragments.GenerationCtx{
+		Ctx:          ctx,
+		NameResolver: data.Resolver,
+	}
+
 	results := make([]string, len(data.Maps))
 	for i, m := range data.Maps {
-		code, err := m.Generate(data.Resolver)
+		code, err := m.Generate(generationCtx)
 		if err != nil {
 			return nil, fmt.Errorf("%+v fragment generation: %w", m, err)
 		}

@@ -6,14 +6,15 @@ import (
 	"go/types"
 	"mapgenie/mapgen/entities"
 	"mapgenie/mapgen/gen"
+	"mapgenie/mapgen/gen/fragments"
 	"mapgenie/pkg/log"
 	"reflect"
 )
 
-func MappableFields(ctx context.Context, tfs entities.TargetFuncSignature) []gen.MapExpression {
+func MappableFields(ctx context.Context, tfs entities.TargetFuncSignature) []gen.MapStatement {
 	in := tfs.In.FieldMap()
 
-	list := make([]gen.MapExpression, 0)
+	list := make([]gen.MapStatement, 0)
 
 	for i := 0; i < tfs.Out.Struct.NumFields(); i++ {
 		field := tfs.Out.Struct.Field(i)
@@ -42,8 +43,8 @@ func MappableFields(ctx context.Context, tfs entities.TargetFuncSignature) []gen
 	return list
 }
 
-func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, bool) {
-	base := gen.BaseMapStatement{
+func createMapping(fieldName string, in, out types.Type) (gen.MapStatement, bool) {
+	base := fragments.BaseMapStatement{
 		In:       in,
 		Out:      out,
 		InField:  fieldName,
@@ -51,59 +52,59 @@ func createMapping(fieldName string, in, out types.Type) (gen.MapExpression, boo
 	}
 
 	if typesAreCastable(in, out) {
-		return gen.NewCast(base), true
+		return fragments.NewCast(base), true
 	}
 
 	outPtr, ok := out.(*types.Pointer)
 	if ok && typesAreCastable(in, outPtr.Elem()) {
-		return gen.NewCastValueToPtr(base), true
+		return fragments.NewCastValueToPtr(base), true
 	}
 
 	outPtr, ok = out.Underlying().(*types.Pointer)
 	if ok && typesAreCastable(in, outPtr.Elem()) {
-		return gen.NewCastValueToPtrType(base), true
+		return fragments.NewCastValueToPtrType(base), true
 	}
 
 	inPtr, ok := in.(*types.Pointer)
 	if ok && typesAreCastable(inPtr.Elem(), out) {
-		return gen.NewCastPtrToValue(base), true
+		return fragments.NewCastPtrToValue(base), true
 	}
 
 	inPtr, ok = in.Underlying().(*types.Pointer)
 	if ok && typesAreCastable(inPtr.Elem(), out) {
-		return gen.NewCastPtrToValue(base), true
+		return fragments.NewCastPtrToValue(base), true
 	}
 
 	if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
-		return gen.NewCastPtrToPtr(base), true
+		return fragments.NewCastPtrToPtr(base), true
 	}
 
 	if typeIsIntegerOrFloat(in) && isString(out) {
-		return gen.NewAssignNumberToString(base), true
+		return fragments.NewAssignNumberToString(base), true
 	}
 
 	if isString(in) && typeIsIntegerOrFloat(out) {
-		return gen.NewParseNumberFromString(base), true
+		return fragments.NewParseNumberFromString(base), true
 	}
 
 	if isTime(in) && isBasic(out, types.Int, types.Int64) {
-		return gen.NewTimeToNumber(base), true
+		return fragments.NewTimeToNumber(base), true
 	}
 
 	if isBasic(in, types.Int, types.Int64) && isTime(out) {
-		return gen.NewNumberToTime(base), true
+		return fragments.NewNumberToTime(base), true
 	}
 
 	if isTime(in) && isString(out) {
-		return gen.NewTimeToString(base), true
+		return fragments.NewTimeToString(base), true
 	}
 
 	if isString(in) && isTime(out) {
-		return gen.NewParseTimeFromString(base), true
+		return fragments.NewParseTimeFromString(base), true
 	}
 
 	if CheckImplementsStringer(in) && isString(out) {
-		return gen.NewAssignStringer(base), true
+		return fragments.NewAssignStringer(base), true
 	}
 
 	return nil, false

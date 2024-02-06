@@ -129,7 +129,7 @@ func processMapper(
 		Resolver: imports,
 	}
 
-	newFuncDecl, err := gen.MapperFuncAst(fset, data)
+	newFuncDecl, err := gen.MapperFuncAst(ctx, fset, data)
 	if err != nil {
 		log.Errorf(ctx, "Generation failed: %s", err.Error())
 		return false

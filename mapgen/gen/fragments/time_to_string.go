@@ -1,4 +1,4 @@
-package gen
+package fragments
 
 type TimeToString struct {
 	BaseMapStatement
@@ -11,8 +11,8 @@ func NewTimeToString(base BaseMapStatement) *TimeToString {
 	return &TimeToString{BaseMapStatement: base, Format: "RFC3339"}
 }
 
-func (c *TimeToString) Generate(resolver *FileImports) (string, error) {
-	c.TimeName = resolver.ResolvePkgImport("time")
+func (c *TimeToString) Generate(g *GenerationCtx) (string, error) {
+	c.TimeName = g.NameResolver.ResolvePkgImport("time")
 	sourceTemplate := `result.{{ .OutField }} = input.{{ .InField }}.Format({{ .TimeName }}.{{ .Format }})`
 
 	return c.RunTemplate(c, sourceTemplate)

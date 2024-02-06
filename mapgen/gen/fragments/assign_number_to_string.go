@@ -1,4 +1,4 @@
-package gen
+package fragments
 
 type AssignNumberToString struct {
 	BaseMapStatement
@@ -9,8 +9,8 @@ func NewAssignNumberToString(base BaseMapStatement) *AssignNumberToString {
 	return &AssignNumberToString{BaseMapStatement: base}
 }
 
-func (c *AssignNumberToString) Generate(resolver *FileImports) (string, error) {
-	c.FmtName = resolver.ResolvePkgImport("fmt")
+func (c *AssignNumberToString) Generate(g *GenerationCtx) (string, error) {
+	c.FmtName = g.NameResolver.ResolvePkgImport("fmt")
 
 	sourceTemplate :=
 		`result.{{ .OutField }} = {{ .FmtName }}.Sprint(input.{{ .InField }})`

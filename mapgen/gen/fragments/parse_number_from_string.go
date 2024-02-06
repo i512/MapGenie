@@ -1,4 +1,4 @@
-package gen
+package fragments
 
 import "go/types"
 
@@ -13,8 +13,8 @@ func NewParseNumberFromString(base BaseMapStatement) *ParseNumberFromString {
 	return &ParseNumberFromString{BaseMapStatement: base}
 }
 
-func (c *ParseNumberFromString) Generate(resolver *FileImports) (string, error) {
-	c.StrconvName = resolver.ResolvePkgImport("strconv")
+func (c *ParseNumberFromString) Generate(g *GenerationCtx) (string, error) {
+	c.StrconvName = g.NameResolver.ResolvePkgImport("strconv")
 	c.ConvFunc, c.FuncArgs = c.funcAndArgs()
 
 	sourceTemplate := `

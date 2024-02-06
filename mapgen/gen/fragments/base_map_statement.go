@@ -1,9 +1,8 @@
-package gen
+package fragments
 
 import (
 	"bytes"
 	"go/types"
-	"mapgenie/mapgen/entities"
 	"reflect"
 	"text/template"
 )
@@ -13,7 +12,7 @@ type BaseMapStatement struct {
 	InField, OutField string
 }
 
-func (e BaseMapStatement) CastExpression(in, out types.Type, imports entities.TypeNameResolver) string {
+func (e BaseMapStatement) CastExpression(in, out types.Type, imports NameResolver) string {
 	if reflect.DeepEqual(in, out) {
 		return "" // same type, no cast needed
 	}

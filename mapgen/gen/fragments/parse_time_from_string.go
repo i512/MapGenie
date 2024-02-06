@@ -1,4 +1,4 @@
-package gen
+package fragments
 
 type ParseTimeFromString struct {
 	BaseMapStatement
@@ -13,8 +13,8 @@ func NewParseTimeFromString(base BaseMapStatement) *ParseTimeFromString {
 	}
 }
 
-func (c *ParseTimeFromString) Generate(resolver *FileImports) (string, error) {
-	c.TimeName = resolver.ResolvePkgImport("time")
+func (c *ParseTimeFromString) Generate(g *GenerationCtx) (string, error) {
+	c.TimeName = g.NameResolver.ResolvePkgImport("time")
 
 	sourceTemplate := `
 {{ .OutField }}, err := {{ .TimeName }}.Parse({{ .TimeName }}.{{ .Format }}, input.{{ .InField }}) 
