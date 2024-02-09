@@ -4,9 +4,9 @@ import (
 	"context"
 	"go/token"
 	"go/types"
-	"mapgenie/mapgen/entities"
-	"mapgenie/mapgen/gen"
-	"mapgenie/mapgen/gen/fragments"
+	"mapgenie/entities"
+	"mapgenie/gen"
+	fragments "mapgenie/gen/fragments"
 	"mapgenie/pkg/log"
 	"reflect"
 )

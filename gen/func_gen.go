@@ -7,7 +7,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"mapgenie/mapgen/gen/fragments"
+	"mapgenie/gen/fragments"
 	"text/template"
 )
 

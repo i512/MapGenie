@@ -1,9 +1,8 @@
-package main
+package analyze
 
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -11,24 +10,15 @@ import (
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
-	"mapgenie/mapgen/entities"
-	"mapgenie/mapgen/gen"
-	"mapgenie/mapgen/typematch"
+	"mapgenie/entities"
+	"mapgenie/gen"
 	"mapgenie/pkg/log"
+	"mapgenie/typematch"
 	"os"
 	"regexp"
 )
 
-func main() {
-	ctx := context.Background()
-	ctx = log.Ctx(ctx, log.Warn, os.Stderr)
-
-	flag.Parse()
-	patterns := flag.Args()
-	if len(patterns) == 0 {
-		log.Errorf(ctx, "Provide package patterns in arguments, for example: ./...")
-	}
-
+func ProcessPackages(ctx context.Context, patterns ...string) {
 	fset := token.NewFileSet()
 
 	cfg := packages.Config{
@@ -62,10 +52,10 @@ func main() {
 	}
 }
 
+var targetFuncComment = regexp.MustCompile(`^\w+ map this pls`)
+
 func analyzePkgFile(ctx context.Context, fset *token.FileSet, file *ast.File, pkg *packages.Package) {
 	ctx = log.Fold(ctx, "Analysing file: %s", fset.File(file.Pos()).Name())
-
-	toMapFuncRegex := regexp.MustCompile(`^\w+ map this pls`)
 
 	fileImports := gen.NewFileImports(file, pkg)
 
@@ -77,7 +67,7 @@ func analyzePkgFile(ctx context.Context, fset *token.FileSet, file *ast.File, pk
 			return true
 		}
 
-		if funcDecl.Doc == nil || !toMapFuncRegex.MatchString(funcDecl.Doc.Text()) {
+		if funcDecl.Doc == nil || !targetFuncComment.MatchString(funcDecl.Doc.Text()) {
 			return true
 		}
 
