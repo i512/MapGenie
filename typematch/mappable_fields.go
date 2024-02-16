@@ -6,15 +6,15 @@ import (
 	"go/types"
 	"mapgenie/entities"
 	"mapgenie/gen"
-	fragments "mapgenie/gen/fragments"
+	"mapgenie/gen/fragments"
 	"mapgenie/pkg/log"
 	"reflect"
 )
 
-func MappableFields(ctx context.Context, tfs entities.TargetFuncSignature) []gen.MapStatement {
+func MappableFields(ctx context.Context, tfs entities.TargetFunc) []entities.Statement {
 	in := tfs.In.FieldMap()
 
-	list := make([]gen.MapStatement, 0)
+	list := make([]entities.Statement, 0)
 
 	for i := 0; i < tfs.Out.Struct.NumFields(); i++ {
 		field := tfs.Out.Struct.Field(i)
@@ -28,7 +28,7 @@ func MappableFields(ctx context.Context, tfs entities.TargetFuncSignature) []gen
 		}
 
 		if !token.IsExported(outFieldName) && !(tfs.In.Local && tfs.Out.Local) {
-			log.Debugf(ctx, "Output field is unexported: %s", outFieldName)
+			log.Infof(ctx, "Output field is unexported: %s", outFieldName)
 			continue
 		}
 

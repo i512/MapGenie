@@ -7,6 +7,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"mapgenie/entities"
 	"mapgenie/gen/fragments"
 	"text/template"
 )
@@ -36,7 +37,7 @@ type MapTemplateData struct {
 	OutIsPtr bool
 	Resolver *FileImports
 	Mappings []string
-	Maps     []MapStatement
+	Maps     []entities.Statement
 }
 
 type MapStatement interface {

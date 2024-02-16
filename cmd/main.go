@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"flag"
-	"mapgenie/analyze"
+	"mapgenie/analysis"
+	"mapgenie/changes"
 	"mapgenie/pkg/log"
 	"os"
 )
@@ -18,5 +19,6 @@ func main() {
 		log.Errorf(ctx, "Provide package patterns in arguments, for example: ./...")
 	}
 
-	analyze.ProcessPackages(ctx, patterns...)
+	targetFiles := analysis.FindTargetsInPackages(ctx, patterns...)
+	changes.ApplyFilesChanges(ctx, targetFiles)
 }
