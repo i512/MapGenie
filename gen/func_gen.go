@@ -60,17 +60,30 @@ func (d MapTemplateData) OutTypeArg() string {
 	return d.OutType
 }
 
-func MapperFuncAst(ctx context.Context, fset *token.FileSet, data MapTemplateData) (*ast.FuncDecl, error) {
-	mappings, err := generateExpressions(ctx, data)
+func FuncAst(ctx context.Context, tf entities.TargetFunc, fset *token.FileSet, imports *FileImports) (*ast.FuncDecl, error) {
+	data := MapTemplateData{
+		FuncName: tf.FuncDecl.Name.Name,
+		InType:   imports.ResolveTypeName(tf.In.Named),
+		InIsPtr:  tf.In.IsPtr,
+		OutType:  imports.ResolveTypeName(tf.Out.Named),
+		OutIsPtr: tf.Out.IsPtr,
+		Resolver: imports,
+	}
+
+	mappings, err := generateExpressions(ctx, tf.Statements, imports)
 	if err != nil {
 		return nil, err
 	}
 
 	data.Mappings = mappings
 
+	return generateAst(ctx, fset, data)
+}
+
+func generateAst(ctx context.Context, fset *token.FileSet, data MapTemplateData) (*ast.FuncDecl, error) {
 	t := template.Must(template.New("map").Parse(mapTemplate))
 	funcSource := bytes.NewBuffer(nil)
-	err = t.Execute(funcSource, data)
+	err := t.Execute(funcSource, data)
 	if err != nil {
 		return nil, fmt.Errorf("func template generation: %w", err)
 	}
@@ -84,14 +97,14 @@ func MapperFuncAst(ctx context.Context, fset *token.FileSet, data MapTemplateDat
 	return file.Decls[0].(*ast.FuncDecl), nil
 }
 
-func generateExpressions(ctx context.Context, data MapTemplateData) ([]string, error) {
+func generateExpressions(ctx context.Context, statements []entities.Statement, imports *FileImports) ([]string, error) {
 	generationCtx := &fragments.GenerationCtx{
 		Ctx:          ctx,
-		NameResolver: data.Resolver,
+		NameResolver: imports,
 	}
 
-	results := make([]string, len(data.Maps))
-	for i, m := range data.Maps {
+	results := make([]string, len(statements))
+	for i, m := range statements {
 		code, err := m.Generate(generationCtx)
 		if err != nil {
 			return nil, fmt.Errorf("%+v fragment generation: %w", m, err)

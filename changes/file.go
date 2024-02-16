@@ -23,42 +23,35 @@ func ApplyFile(ctx context.Context, file entities.TargetFile) {
 	modified := false
 
 	for _, tf := range file.Funcs {
-		fileModified := processMapper(ctx, file.Fset, tf.FuncDecl, tf, imports)
+		fileModified := processMapper(ctx, file.Fset, tf, imports)
 		modified = modified || fileModified
 	}
 
 	if modified {
 		imports.WriteImportsToAst(file.Fset, file.Ast)
-		modifyFile(file.Fset, file.Ast)
+		err := modifyFile(file.Fset, file.Ast)
+		if err != nil {
+			log.Errorf(ctx, "Failed to generate: %s", err.Error())
+		}
 	}
 }
 
 func processMapper(
 	ctx context.Context,
 	fset *token.FileSet,
-	funcDecl *ast.FuncDecl,
 	tf entities.TargetFunc,
 	imports *gen.FileImports,
 ) (astModified bool) {
-	data := gen.MapTemplateData{
-		FuncName: funcDecl.Name.Name,
-		InType:   imports.ResolveTypeName(tf.In.Named), // TODO: move type resolution to gen
-		InIsPtr:  tf.In.IsPtr,
-		OutType:  imports.ResolveTypeName(tf.Out.Named),
-		OutIsPtr: tf.Out.IsPtr,
-		Maps:     tf.Statements,
-		Resolver: imports,
-	}
-
-	newFuncDecl, err := gen.MapperFuncAst(ctx, fset, data)
+	newFuncDecl, err := gen.FuncAst(ctx, tf, fset, imports)
 	if err != nil {
 		log.Errorf(ctx, "Generation failed: %s", err.Error())
 		return false
 	}
 
-	funcDecl.Body = newFuncDecl.Body
-	funcDecl.Type.Params = newFuncDecl.Type.Params
-	funcDecl.Type.Results = newFuncDecl.Type.Results
+	f := tf.FuncDecl
+	f.Body = newFuncDecl.Body
+	f.Type.Params = newFuncDecl.Type.Params
+	f.Type.Results = newFuncDecl.Type.Results
 
 	return true
 }
