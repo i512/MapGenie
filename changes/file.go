@@ -18,6 +18,8 @@ func ApplyFilesChanges(ctx context.Context, files []entities.TargetFile) {
 }
 
 func ApplyFile(ctx context.Context, file entities.TargetFile) {
+	ctx = log.Fold(ctx, "Generating mappers for file: %s", file.Name())
+
 	imports := gen.NewFileImports(file.Ast, file.Pkg)
 
 	modified := false
@@ -27,12 +29,15 @@ func ApplyFile(ctx context.Context, file entities.TargetFile) {
 		modified = modified || fileModified
 	}
 
-	if modified {
-		imports.WriteImportsToAst(file.Fset, file.Ast)
-		err := modifyFile(file.Fset, file.Ast)
-		if err != nil {
-			log.Errorf(ctx, "Failed to generate: %s", err.Error())
-		}
+	if !modified {
+		log.Warnf(ctx, "No modifications applied")
+		return
+	}
+
+	imports.WriteImportsToAst(file.Fset, file.Ast)
+	err := modifyFile(file.Fset, file.Ast)
+	if err != nil {
+		log.Errorf(ctx, "Failed to generate: %s", err.Error())
 	}
 }
 
@@ -42,6 +47,8 @@ func processMapper(
 	tf entities.TargetFunc,
 	imports *gen.FileImports,
 ) (astModified bool) {
+	ctx = log.Fold(ctx, "Processing func: %s", tf.Name())
+
 	newFuncDecl, err := gen.FuncAst(ctx, tf, fset, imports)
 	if err != nil {
 		log.Errorf(ctx, "Generation failed: %s", err.Error())

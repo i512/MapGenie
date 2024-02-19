@@ -15,10 +15,18 @@ type TargetFile struct {
 	Funcs []TargetFunc
 }
 
+func (f TargetFile) Name() string {
+	return f.Fset.Position(f.Ast.Pos()).Filename
+}
+
 type TargetFunc struct {
 	FuncDecl   *ast.FuncDecl
 	In, Out    Argument
 	Statements []Statement
+}
+
+func (f TargetFunc) Name() string {
+	return f.FuncDecl.Name.Name
 }
 
 type Argument struct {

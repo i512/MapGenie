@@ -62,27 +62,27 @@ func (l *Logger) do(r Row) {
 }
 
 func (l *Logger) print(r Row) {
-	_, err := fmt.Fprintf(l.io, "%s%s\n", l.levelShort(r.level), r.str)
+	_, err := fmt.Fprintf(l.io, "%s\n", l.levelColorize(r.level, r.str))
 	if err != nil {
 		panic("failed to print log: " + err.Error())
 	}
 }
 
-func (l *Logger) levelShort(lvl LogLevel) string {
+func (l *Logger) levelColorize(lvl LogLevel, s string) string {
 	switch lvl {
 	case Fatal:
-		return "F"
+		return Color(FColor, s)
 	case Error:
-		return "E"
+		return Color(EColor, s)
 	case Warn:
-		return "W"
+		return Color(WColor, s)
 	case Info:
-		return " "
+		return Color(IColor, s)
 	case Debug:
-		return "d"
+		return Color(DColor, s)
 	}
 
-	return "?"
+	return s
 }
 
 func (l *Logger) unfold(rows []Row) {

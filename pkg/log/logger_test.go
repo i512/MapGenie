@@ -14,7 +14,7 @@ func TestInfof(t *testing.T) {
 	ctx = Ctx(ctx, Info, b)
 
 	Infof(ctx, "%s", "processing")
-	assert.Equal(t, " processing\n", b.String())
+	assert.Equal(t, Color(IColor, "processing")+"\n", b.String())
 }
 
 func TestFoldUnfoldsOnError(t *testing.T) {
@@ -30,11 +30,17 @@ func TestFoldUnfoldsOnError(t *testing.T) {
 	Warnf(foldedCtx, "warn")
 	assert.Equal(t, "", b.String())
 	Errorf(foldedCtx, "boom!")
-	assert.Equal(t, " fold title\nd  debug\n   info\nW  warn\nE  boom!\n", b.String())
+	assert.Equal(t, strings.Join([]string{
+		Color(IColor, "fold title"),
+		Color(DColor, "  debug"),
+		Color(IColor, "  info"),
+		Color(WColor, "  warn"),
+		Color(EColor, "  boom!"),
+	}, "\n")+"\n", b.String())
 
 	b.Reset()
 	Infof(foldedCtx, "info2")
-	assert.Equal(t, "   info2\n", b.String())
+	assert.Equal(t, Color(IColor, "  info2")+"\n", b.String())
 }
 
 func TestUnfoldsParents(t *testing.T) {
@@ -43,7 +49,7 @@ func TestUnfoldsParents(t *testing.T) {
 	ctx = Ctx(ctx, Info, b)
 
 	Infof(ctx, "top")
-	assert.Equal(t, " top\n", b.String())
+	assert.Equal(t, Color(IColor, "top")+"\n", b.String())
 	b.Reset()
 
 	fold1Ctx := Fold(ctx, "fold1")
@@ -61,16 +67,17 @@ func TestUnfoldsParents(t *testing.T) {
 	assert.Equal(t, "", b.String())
 	Errorf(fold3Ctx, "fold3error")
 
-	expected := `
- fold1
-   fold1info
-   fold2
-     fold2info
-     fold3
-       fold3info
-E      fold3error
-`
-	assert.Equal(t, strings.TrimPrefix(expected, "\n"), b.String())
+	expected := strings.Join([]string{
+		Color(IColor, "fold1"),
+		Color(IColor, "  fold1info"),
+		Color(IColor, "  fold2"),
+		Color(IColor, "    fold2info"),
+		Color(IColor, "    fold3"),
+		Color(IColor, "      fold3info"),
+		Color(EColor, "      fold3error"),
+	}, "\n") + "\n"
+
+	assert.Equal(t, expected, b.String())
 	b.Reset()
 
 	Infof(fold1Ctx, "fold1info2")
@@ -79,11 +86,11 @@ E      fold3error
 	Infof(ctx, "top2")
 	Infof(foldOtherCtx, "hidden")
 
-	expected = `
-   fold1info2
-       fold3info2
-     fold2info2
- top2
-`
-	assert.Equal(t, strings.TrimPrefix(expected, "\n"), b.String())
+	expected = strings.Join([]string{
+		Color(IColor, "  fold1info2"),
+		Color(IColor, "      fold3info2"),
+		Color(IColor, "    fold2info2"),
+		Color(IColor, "top2"),
+	}, "\n") + "\n"
+	assert.Equal(t, expected, b.String())
 }

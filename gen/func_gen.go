@@ -90,7 +90,7 @@ func generateAst(ctx context.Context, fset *token.FileSet, data MapTemplateData)
 
 	file, err := parser.ParseFile(fset, "mapgenie_temp.go", "package main\n"+funcSource.String(), 0)
 	if err != nil {
-		return nil, fmt.Errorf("parse generated fragment: %w", err)
+		return nil, fmt.Errorf("parse generated fragment: %w:\n%s", err, funcSource.String())
 	}
 	fset.RemoveFile(fset.File(file.Pos()))
 

@@ -18,7 +18,7 @@ func main() {
 		ArgsUsage: "./path/... [path2 ...]",
 		Action: func(c *cli.Context) error {
 			if c.Args().Len() == 0 {
-				log.Errorf(c.Context, "Provide package patterns in arguments, for example: ./...")
+				log.Errorf(c.Context, "Provide package paths in arguments, for example: ./...")
 				cli.ShowAppHelpAndExit(c, 1)
 			}
 

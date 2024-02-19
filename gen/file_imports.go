@@ -9,6 +9,7 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
 	"mapgenie/pkg/log"
+	"regexp"
 	"strings"
 )
 
@@ -17,6 +18,8 @@ type FileImports struct {
 	importMap  map[string]string
 	newImports []string
 }
+
+var objNameRegex = regexp.MustCompile(`(?:(.*)\.)?(\w+)$`)
 
 func NewFileImports(file *ast.File, pkg *packages.Package) *FileImports {
 	imports := make(map[string]string)
@@ -46,15 +49,15 @@ func (f *FileImports) ResolveTypeName(t types.Type) string {
 	}
 
 	globalName := t.String()
-	parts := strings.Split(globalName, ".")
-	if len(parts) == 1 {
-		return globalName
-	}
-	if len(parts) != 2 {
+	parts := objNameRegex.FindStringSubmatch(globalName)
+	if len(parts) != 3 {
 		log.Fatalf(context.Background(), "cannot parse object name: %s", globalName)
 	}
+	if parts[1] == "" {
+		return globalName
+	}
 
-	pkgPath, objName := parts[0], parts[1]
+	pkgPath, objName := parts[1], parts[2]
 
 	name := f.ResolvePkgImport(pkgPath)
 	if name == "" {

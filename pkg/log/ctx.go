@@ -23,7 +23,7 @@ func Ctx(ctx context.Context, lvl LogLevel, writer io.Writer) context.Context {
 func Fold(ctx context.Context, format string, args ...any) context.Context {
 	l, ok := ctx.Value(key).(*Logger)
 	if !ok {
-		fmt.Println("No log in ctx!")
+		fmt.Println("No logger in ctx!")
 		return ctx
 	}
 
