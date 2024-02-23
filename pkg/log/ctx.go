@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"time"
 )
 
 type ctxKey string
 
 const key = ctxKey("log")
+
+const FoldPrefix = "  "
 
 func Ctx(ctx context.Context, lvl LogLevel, writer io.Writer) context.Context {
 	l := &Logger{
@@ -30,20 +31,19 @@ func Fold(ctx context.Context, format string, args ...any) context.Context {
 	newLogger := &Logger{
 		level:    l.level,
 		io:       l.io,
-		folding:  true,
+		folding:  l.level != Debug,
 		unfoldOn: Error,
 		parent:   l,
-		prefix:   l.prefix + "  ",
-		folded: []Row{
-			{
-				time:  time.Now(),
-				level: Info,
-				str:   l.prefix + fmt.Sprintf(format, args...),
-			},
-		},
+		prefix:   l.prefix,
 	}
 
-	return context.WithValue(ctx, key, newLogger)
+	newCtx := context.WithValue(ctx, key, newLogger)
+
+	Infof(newCtx, format, args...)
+
+	newLogger.prefix += FoldPrefix
+
+	return newCtx
 }
 
 func Debugf(ctx context.Context, format string, args ...any) {

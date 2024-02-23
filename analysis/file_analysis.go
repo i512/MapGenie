@@ -12,6 +12,7 @@ import (
 	"mapgenie/entities"
 	"mapgenie/pkg/log"
 	"mapgenie/typematch"
+	"path/filepath"
 	"regexp"
 )
 
@@ -41,7 +42,7 @@ func (file *FileAnalysis) name() string {
 }
 
 func (file *FileAnalysis) FindTargets(ctx context.Context) *entities.TargetFile {
-	ctx = log.Fold(ctx, "Analyze file: %s", file.name())
+	ctx = log.Fold(ctx, "file: %s", filepath.Base(file.name()))
 
 	funcs := make([]entities.TargetFunc, 0)
 
@@ -76,7 +77,7 @@ func (file *FileAnalysis) isTargetFunc(f *ast.FuncDecl) bool {
 }
 
 func (file *FileAnalysis) targetFunc(ctx context.Context, f *ast.FuncDecl) *entities.TargetFunc {
-	ctx = log.Fold(ctx, "Analyze func: %s (line %d)", f.Name.String(), file.fset.Position(f.Pos()).Line)
+	ctx = log.Fold(ctx, "func: %s (line %d)", f.Name.String(), file.fset.Position(f.Pos()).Line)
 
 	target, err := file.arguments(ctx, f)
 	if errors.Is(err, ErrFuncMismatchError) {

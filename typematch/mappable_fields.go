@@ -28,7 +28,7 @@ func MappableFields(ctx context.Context, tfs entities.TargetFunc) []entities.Sta
 		}
 
 		if !token.IsExported(outFieldName) && !(tfs.In.Local && tfs.Out.Local) {
-			log.Infof(ctx, "Output field is unexported: %s", outFieldName)
+			log.Debugf(ctx, "Output field is unexported: %s", outFieldName)
 			continue
 		}
 

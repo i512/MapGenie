@@ -3,17 +3,17 @@ package log
 import "fmt"
 
 const (
-	Red       = "\033[0;31m"
-	LightRed  = "\033[1;31m"
-	Yellow    = "\033]1;33m"
-	LightGray = "\033]0;38m"
-	NoColor   = "\033[0m"
+	Red      = "\033[31;1m"
+	LightRed = "\033[31m"
+	Yellow   = "\033[33m"
+	Cyan     = "\033[36m"
+	NoColor  = "\033[0m"
 
 	FColor = LightRed
 	EColor = Red
 	WColor = Yellow
 	IColor = ""
-	DColor = LightGray
+	DColor = Cyan
 )
 
 func Color(color string, s string) string {

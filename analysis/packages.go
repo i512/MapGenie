@@ -6,9 +6,11 @@ import (
 	"golang.org/x/tools/go/packages"
 	"mapgenie/entities"
 	"mapgenie/pkg/log"
+	"strings"
 )
 
 func FindTargetsInPackages(ctx context.Context, patterns ...string) []entities.TargetFile {
+	ctx = log.Fold(ctx, "Analyze package paths (patterns): %s", strings.Join(patterns, ", "))
 	fset := token.NewFileSet()
 
 	cfg := packages.Config{
@@ -36,7 +38,7 @@ func FindTargetsInPackages(ctx context.Context, patterns ...string) []entities.T
 	targetFiles := make([]entities.TargetFile, 0)
 
 	for _, pkg := range pkgs {
-		pkgCtx := log.Fold(ctx, "Analysing package: %s", pkg.Name)
+		pkgCtx := log.Fold(ctx, "package: %s", pkg.Name)
 
 		for _, file := range pkg.Syntax {
 			file := NewFileAnalysis(pkg, fset, file)

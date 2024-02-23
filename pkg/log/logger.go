@@ -11,7 +11,7 @@ import (
 type LogLevel int
 
 const (
-	Debug = iota
+	Debug = LogLevel(iota)
 	Info
 	Warn
 	Error
@@ -25,14 +25,16 @@ type Row struct {
 }
 
 type Logger struct {
-	level    LogLevel
-	io       io.Writer
+	mux sync.Mutex
+	io  io.Writer
+
+	level  LogLevel
+	parent *Logger
+	prefix string
+
 	folding  bool
-	folded   []Row
 	unfoldOn LogLevel
-	mux      sync.Mutex
-	parent   *Logger
-	prefix   string
+	folded   []Row
 }
 
 func (l *Logger) Logf(lvl LogLevel, format string, args ...any) {

@@ -12,13 +12,16 @@ import (
 )
 
 func ApplyFilesChanges(ctx context.Context, files []entities.TargetFile) {
+	ctx = log.Fold(ctx, "Writing changes to %d files", len(files))
+
 	for _, file := range files {
 		ApplyFile(ctx, file)
 	}
 }
 
 func ApplyFile(ctx context.Context, file entities.TargetFile) {
-	ctx = log.Fold(ctx, "Generating mappers for file: %s", file.Name())
+	ctx = log.Fold(ctx, "file: %s", file.Name())
+	defer log.Debugf(ctx, "written")
 
 	imports := gen.NewFileImports(file.Ast, file.Pkg)
 
