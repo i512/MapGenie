@@ -28,22 +28,8 @@ func Fold(ctx context.Context, format string, args ...any) context.Context {
 		return ctx
 	}
 
-	newLogger := &Logger{
-		level:    l.level,
-		io:       l.io,
-		folding:  l.level != Debug,
-		unfoldOn: Error,
-		parent:   l,
-		prefix:   l.prefix,
-	}
-
-	newCtx := context.WithValue(ctx, key, newLogger)
-
-	Infof(newCtx, format, args...)
-
-	newLogger.prefix += FoldPrefix
-
-	return newCtx
+	newLogger := l.Fold(format, args...)
+	return context.WithValue(ctx, key, newLogger)
 }
 
 func Debugf(ctx context.Context, format string, args ...any) {

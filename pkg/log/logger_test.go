@@ -94,3 +94,27 @@ func TestUnfoldsParents(t *testing.T) {
 	}, "\n") + "\n"
 	assert.Equal(t, expected, b.String())
 }
+
+func TestHidesFoldsAfterError(t *testing.T) {
+	b := &bytes.Buffer{}
+	ctx := context.Background()
+	ctx = Ctx(ctx, Error, b)
+
+	foldWithError := Fold(ctx, "fold with error")
+	Errorf(foldWithError, "error!")
+
+	nextFold := Fold(ctx, "next fold")
+	Infof(nextFold, "info!")
+
+	Infof(foldWithError, "still unfolded!")
+
+	expected := strings.Join([]string{
+		Color(IColor, "fold with error"),
+		Color(EColor, "  error!"),
+		Color(IColor, "  still unfolded!"),
+		//Color(IColor, "next fold"),
+		//Color(IColor, "  info!"),
+	}, "\n") + "\n"
+
+	assert.Equal(t, expected, b.String())
+}

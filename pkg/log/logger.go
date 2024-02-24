@@ -54,7 +54,7 @@ func (l *Logger) do(r Row) {
 		return
 	}
 
-	if r.level >= l.level {
+	if r.level >= l.level || !l.folding {
 		l.print(r)
 	}
 
@@ -87,9 +87,32 @@ func (l *Logger) levelColorize(lvl LogLevel, s string) string {
 	return s
 }
 
+func (l *Logger) Fold(format string, args ...any) *Logger {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
+	if l.level != Debug {
+		l.folding = true // new fold started, stop showing logs
+	}
+
+	newLogger := &Logger{
+		level:    l.level,
+		io:       l.io,
+		folding:  l.folding,
+		unfoldOn: Error,
+		parent:   l,
+		prefix:   l.prefix,
+	}
+
+	newLogger.Logf(Info, format, args...)
+
+	newLogger.prefix = FoldPrefix + newLogger.prefix
+
+	return newLogger
+}
+
 func (l *Logger) unfold(rows []Row) {
 	l.folding = false
-	l.level = Debug
 
 	if l.parent != nil {
 		l.parent.unfold(append(l.folded, rows...))
