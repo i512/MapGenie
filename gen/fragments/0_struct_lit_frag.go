@@ -41,15 +41,9 @@ func (f *StructLitFrag) Lines() []string {
 	return preLines.s("return ", takePtr, f.OutType, "{").w(litLines).s("}").Lines()
 }
 
-func (f *StructLitFrag) VarSet(set VarSet) {
+func (f *StructLitFrag) Deps(r *DependencyRegistry) {
 	for _, assign := range f.Assigns {
-		assign.Fragment.VarSet(set)
-	}
-}
-
-func (f *StructLitFrag) TypeSet(set TypeSet) {
-	for _, assign := range f.Assigns {
-		assign.Fragment.TypeSet(set)
+		r.Register(assign.Fragment)
 	}
 }
 

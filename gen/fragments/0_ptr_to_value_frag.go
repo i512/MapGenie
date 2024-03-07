@@ -25,12 +25,8 @@ func (f *PtrToValueFrag) Lines() []string {
 		Lines()
 }
 
-func (f *PtrToValueFrag) TypeSet(set TypeSet) {
-	set[f.CastWith] = struct{}{}
-}
-
-func (f *PtrToValueFrag) VarSet(set VarSet) {
-	set[f.Result] = struct{}{}
+func (f *PtrToValueFrag) Deps(r *DependencyRegistry) {
+	r.Type(f.CastWith)
 }
 
 func (f *PtrToValueFrag) ResVar() *Var {

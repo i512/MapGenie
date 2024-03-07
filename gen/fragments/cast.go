@@ -48,6 +48,6 @@ func (f *CastField) Lines() []string {
 	return NewCastF(&OneLinerFrag{Line: "input." + f.InField}, castWith).Lines()
 }
 
-func (f *CastField) TypeSet(s TypeSet) {
-	s[f.outType] = struct{}{}
+func (f *CastField) Deps(r *DependencyRegistry) {
+	r.Type(f.outType)
 }

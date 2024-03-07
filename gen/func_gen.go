@@ -74,30 +74,22 @@ func FuncAst(ctx context.Context, tf entities.TargetFunc, fset *token.FileSet, i
 
 	data.Mappings = mappings
 
-	// TODO: extract
-	typeSet := fragments.TypeSet{}
-	pkgSet := fragments.PkgSet{}
-	varSet := fragments.VarSet{}
+	registry := fragments.NewDependencyRegistry()
 
+	// TODO: extract
 	for _, f := range tf.Fragments {
-		f.TypeSet(typeSet)
-		f.PkgSet(pkgSet)
-		f.VarSet(varSet)
+		registry.Register(f)
 	}
 
-	delete(typeSet, nil)
-	delete(pkgSet, nil)
-	delete(varSet, nil)
-
-	for t, _ := range typeSet {
+	for t, _ := range registry.TypeSet {
 		t.LocalName = imports.ResolveTypeName(t.Type)
 	}
 
-	for pkg, _ := range pkgSet {
+	for pkg, _ := range registry.PkgSet {
 		pkg.LocalName = imports.ResolvePkgImport(pkg.Path)
 	}
 
-	for v, _ := range varSet {
+	for v, _ := range registry.VarSet {
 		v.Name = v.DesiredName
 	}
 

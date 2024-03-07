@@ -1,6 +1,7 @@
 package fragments
 
 type AssignFrag struct {
+	BaseFrag
 	Source Fragment
 	Result *Var
 }
@@ -22,11 +23,10 @@ func (f *AssignFrag) Lines() []string {
 	return append(sourceLines[:len(sourceLines)-1], f.Result.Name+" := "+sourceLines[len(sourceLines)-1])
 }
 
-func (f *AssignFrag) VarSet(set VarSet) {
-	set[f.Result] = struct{}{}
-	f.Source.VarSet(set)
+func (f *AssignFrag) Deps(r *DependencyRegistry) {
+	r.Register(f.Source)
 }
 
-func (f *AssignFrag) ResVars() []*Var {
-	return []*Var{f.Result}
+func (f *AssignFrag) ResVar() *Var {
+	return f.Result
 }
