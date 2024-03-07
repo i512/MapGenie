@@ -1,5 +1,7 @@
 package fragments
 
+import "reflect"
+
 type Cast struct {
 	BaseMapStatement
 	CastWith string
@@ -18,4 +20,34 @@ func (c *Cast) Generate(g *GenerationCtx) (string, error) {
 			 {{- if ne .CastWith "" }}){{- end }}`
 
 	return c.RunTemplate(c, sourceTemplate)
+}
+
+type CastField struct {
+	BaseFrag
+	BaseMapStatement
+	outType *Type
+}
+
+func NewCastField(base BaseMapStatement) *CastField {
+	f := &CastField{
+		BaseMapStatement: base,
+	}
+
+	if !reflect.DeepEqual(base.In, base.Out) {
+		f.outType = &Type{Type: base.Out}
+	}
+
+	return f
+}
+
+func (f *CastField) Lines() []string {
+	castWith := ""
+	if f.outType != nil {
+		castWith = f.outType.LocalName
+	}
+	return NewCastF(&OneLinerFrag{Line: "input." + f.InField}, castWith).Lines()
+}
+
+func (f *CastField) TypeSet(s TypeSet) {
+	s[f.outType] = struct{}{}
 }

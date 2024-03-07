@@ -9,23 +9,19 @@ import (
 	"go/token"
 	"mapgenie/entities"
 	"mapgenie/gen/fragments"
+	"mapgenie/pkg/log"
+	"strings"
 	"text/template"
 )
 
 const mapTemplate = `func {{ .FuncName }}(input {{ .InTypeArg }}) {{ .OutTypeArg }} {
-	var result {{ .OutType }}
-
 	{{- if .InIsPtr }}
 	if input == nil {
-		return {{ if .OutIsPtr }}&{{ end }}result
+		return {{ if .OutIsPtr }}&{{ end }}{{ .OutType }}{}
 	}
 	{{ end }}
 
-	{{- range .Mappings }}
-		{{ . }}
-	{{- end }}
-
-	return {{ if .OutIsPtr }}&{{ end }}result
+	{{ .MapText }}	
 }`
 
 type MapTemplateData struct {
@@ -37,6 +33,7 @@ type MapTemplateData struct {
 	OutIsPtr bool
 	Resolver *FileImports
 	Mappings []string
+	MapText  string
 	Maps     []entities.Statement
 }
 
@@ -77,6 +74,40 @@ func FuncAst(ctx context.Context, tf entities.TargetFunc, fset *token.FileSet, i
 
 	data.Mappings = mappings
 
+	// TODO: extract
+	typeSet := fragments.TypeSet{}
+	pkgSet := fragments.PkgSet{}
+	varSet := fragments.VarSet{}
+
+	for _, f := range tf.Fragments {
+		f.TypeSet(typeSet)
+		f.PkgSet(pkgSet)
+		f.VarSet(varSet)
+	}
+
+	delete(typeSet, nil)
+	delete(pkgSet, nil)
+	delete(varSet, nil)
+
+	for t, _ := range typeSet {
+		t.LocalName = imports.ResolveTypeName(t.Type)
+	}
+
+	for pkg, _ := range pkgSet {
+		pkg.LocalName = imports.ResolvePkgImport(pkg.Path)
+	}
+
+	for v, _ := range varSet {
+		v.Name = v.DesiredName
+	}
+
+	assigns := make([]fragments.StructAssign, 0)
+	for outField, Fragment := range tf.Fragments {
+		assigns = append(assigns, fragments.StructAssign{OutField: outField, Fragment: Fragment})
+	}
+
+	data.MapText = strings.Join(fragments.NewStructLit(data.OutType, data.OutIsPtr, assigns).Lines(), "\n")
+
 	return generateAst(ctx, fset, data)
 }
 
@@ -87,6 +118,8 @@ func generateAst(ctx context.Context, fset *token.FileSet, data MapTemplateData)
 	if err != nil {
 		return nil, fmt.Errorf("func template generation: %w", err)
 	}
+
+	log.Debugf(ctx, "Generated source:\n%s", funcSource.String())
 
 	file, err := parser.ParseFile(fset, "mapgenie_temp.go", "package main\n"+funcSource.String(), 0)
 	if err != nil {

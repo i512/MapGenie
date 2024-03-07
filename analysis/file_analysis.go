@@ -77,7 +77,7 @@ func (file *FileAnalysis) isTargetFunc(f *ast.FuncDecl) bool {
 }
 
 func (file *FileAnalysis) targetFunc(ctx context.Context, f *ast.FuncDecl) *entities.TargetFunc {
-	ctx = log.Fold(ctx, "func: %s (line %d)", f.Name.String(), file.fset.Position(f.Pos()).Line)
+	ctx = log.Fold(ctx, "mapper func: %s (line %d)", f.Name.String(), file.fset.Position(f.Pos()).Line)
 
 	target, err := file.arguments(ctx, f)
 	if errors.Is(err, ErrFuncMismatchError) {
@@ -89,7 +89,7 @@ func (file *FileAnalysis) targetFunc(ctx context.Context, f *ast.FuncDecl) *enti
 		return nil
 	}
 
-	target.Statements = typematch.MappableFields(ctx, target)
+	target.Fragments = typematch.MappableFields(ctx, target)
 
 	return &target
 }

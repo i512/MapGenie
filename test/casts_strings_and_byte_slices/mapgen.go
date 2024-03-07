@@ -1,11 +1,11 @@
 package casts_strings_and_byte_slices
 
 // MapAB map this pls
-func MapAB(A) B {
-	return B{}
+func MapAB(input A) B {
+	return B{A: []byte(input.A)}
 }
 
 // MapBA map this pls
-func MapBA(B) A {
-	return A{}
+func MapBA(input B) A {
+	return A{A: string(input.A)}
 }

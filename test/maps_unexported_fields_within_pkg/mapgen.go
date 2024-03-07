@@ -4,12 +4,10 @@ import "mapgenie/test/maps_unexported_fields_within_pkg/c"
 
 // MapAB map this pls
 func MapAB(input A) B {
-	var result B
-	return result
+	return B{u: input.u}
 }
 
 // MapAC map this pls
 func MapAC(input A) c.C {
-	var result c.C
-	return result
+	return c.C{}
 }

@@ -1,11 +1,11 @@
 package convert_time_to_and_from_string
 
 // MapAB map this pls
-func MapAB(A) B {
+func MapAB(input A) B {
 	return B{}
 }
 
 // MapBA map this pls
-func MapBA(B) A {
+func MapBA(input B) A {
 	return A{}
 }

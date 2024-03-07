@@ -6,12 +6,10 @@ import (
 
 // MapAB map this pls
 func MapAB(input structs.A) structs.B {
-	var result structs.B
-	return result
+	return structs.B{}
 }
 
 // MapBA map this pls
 func MapBA(input structs.B) structs.A {
-	var result structs.A
-	return result
+	return structs.A{}
 }

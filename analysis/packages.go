@@ -30,8 +30,9 @@ func FindTargetsInPackages(ctx context.Context, patterns ...string) []entities.T
 		log.Errorf(ctx, "Failed to load packages: %s", err.Error())
 		return nil
 	}
+
 	if packages.PrintErrors(pkgs) > 0 {
-		log.Errorf(ctx, "Encountered errors while parsing")
+		log.Errorf(ctx, "Encountered errors while parsing. The problem above ^^^")
 		return nil
 	}
 

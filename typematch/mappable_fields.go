@@ -11,10 +11,10 @@ import (
 	"reflect"
 )
 
-func MappableFields(ctx context.Context, tfs entities.TargetFunc) []entities.Statement {
+func MappableFields(ctx context.Context, tfs entities.TargetFunc) map[string]fragments.Fragment {
 	in := tfs.In.FieldMap()
 
-	list := make([]entities.Statement, 0)
+	list := make(map[string]fragments.Fragment)
 
 	for i := 0; i < tfs.Out.Struct.NumFields(); i++ {
 		field := tfs.Out.Struct.Field(i)
@@ -37,13 +37,80 @@ func MappableFields(ctx context.Context, tfs entities.TargetFunc) []entities.Sta
 			continue
 		}
 
-		list = append(list, mapping)
+		list[outFieldName] = mapping
 	}
 
 	return list
 }
 
-func createMapping(fieldName string, in, out types.Type) (gen.MapStatement, bool) {
+func createMapping(fieldName string, in, out types.Type) (fragments.Fragment, bool) {
+	base := fragments.BaseMapStatement{
+		In:       in,
+		Out:      out,
+		InField:  fieldName,
+		OutField: fieldName,
+	}
+
+	if typesAreCastable(in, out) {
+		return fragments.NewCastField(base), true
+	}
+
+	//outPtr, ok := out.(*types.Pointer)
+	//if ok && typesAreCastable(in, outPtr.Elem()) {
+	//	return fragments.NewCastValueToPtr(base), true
+	//}
+	//
+	//outPtr, ok = out.Underlying().(*types.Pointer)
+	//if ok && typesAreCastable(in, outPtr.Elem()) {
+	//	return fragments.NewCastValueToPtrType(base), true
+	//}
+	//
+	inPtr, ok := in.(*types.Pointer)
+	if ok && typesAreCastable(inPtr.Elem(), out) {
+		return fragments.NewPtrToValueFrag(base), true
+	}
+	//
+	//inPtr, ok = in.Underlying().(*types.Pointer)
+	//if ok && typesAreCastable(inPtr.Elem(), out) {
+	//	return fragments.NewCastPtrToValue(base), true
+	//}
+	//
+	//if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
+	//	return fragments.NewCastPtrToPtr(base), true
+	//}
+	//
+	//if typeIsIntegerOrFloat(in) && isString(out) {
+	//	return fragments.NewAssignNumberToString(base), true
+	//}
+	//
+	//if isString(in) && typeIsIntegerOrFloat(out) {
+	//	return fragments.NewParseNumberFromString(base), true
+	//}
+	//
+	//if isTime(in) && isBasic(out, types.Int, types.Int64) {
+	//	return fragments.NewTimeToNumber(base), true
+	//}
+	//
+	//if isBasic(in, types.Int, types.Int64) && isTime(out) {
+	//	return fragments.NewNumberToTime(base), true
+	//}
+	//
+	//if isTime(in) && isString(out) {
+	//	return fragments.NewTimeToString(base), true
+	//}
+	//
+	//if isString(in) && isTime(out) {
+	//	return fragments.NewParseTimeFromString(base), true
+	//}
+	//
+	//if CheckImplementsStringer(in) && isString(out) {
+	//	return fragments.NewAssignStringer(base), true
+	//}
+
+	return nil, false
+}
+
+func _createMapping(fieldName string, in, out types.Type) (gen.MapStatement, bool) {
 	base := fragments.BaseMapStatement{
 		In:       in,
 		Out:      out,

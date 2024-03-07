@@ -23,6 +23,7 @@ type TargetFunc struct {
 	FuncDecl   *ast.FuncDecl
 	In, Out    Argument
 	Statements []Statement
+	Fragments  map[string]fragments.Fragment
 }
 
 func (f TargetFunc) Name() string {
