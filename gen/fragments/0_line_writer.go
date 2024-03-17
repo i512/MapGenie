@@ -25,6 +25,11 @@ func (w *LineWriter) w(w2 *LineWriter) *LineWriter {
 	return w
 }
 
+func (w *LineWriter) ident(f func(lineWriter *LineWriter)) *LineWriter {
+	f(w)
+	return w
+}
+
 func (w *LineWriter) String() string {
 	return strings.Join(w.lines, "\n")
 }

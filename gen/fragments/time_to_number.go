@@ -25,3 +25,29 @@ func (c *TimeToNumber) Generate(_ *GenerationCtx) (string, error) {
 
 	return c.RunTemplate(c, sourceTemplate)
 }
+
+type TimeToNumber2 struct {
+	BaseMapStatement
+	BaseFrag
+}
+
+func NewTimeToNumber2(base BaseMapStatement) *TimeToNumber2 {
+	f := &TimeToNumber2{
+		BaseMapStatement: base,
+	}
+
+	return f
+}
+
+func (f *TimeToNumber2) Lines() []string {
+	w := writer()
+
+	if b, ok := f.Out.(*types.Basic); ok && b.Kind() != types.Int64 {
+		castWith := f.Out.String()
+		w.s(castWith, "(input.", f.InField, ".Unix())")
+	} else {
+		w.s("input.", f.InField, ".Unix()")
+	}
+
+	return w.Lines()
+}

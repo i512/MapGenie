@@ -55,57 +55,57 @@ func createMapping(fieldName string, in, out types.Type) (fragments.Fragment, bo
 		return fragments.NewCastField(base), true
 	}
 
-	//outPtr, ok := out.(*types.Pointer)
-	//if ok && typesAreCastable(in, outPtr.Elem()) {
-	//	return fragments.NewCastValueToPtr(base), true
-	//}
-	//
-	//outPtr, ok = out.Underlying().(*types.Pointer)
-	//if ok && typesAreCastable(in, outPtr.Elem()) {
-	//	return fragments.NewCastValueToPtrType(base), true
-	//}
-	//
+	outPtr, ok := out.(*types.Pointer)
+	if ok && typesAreCastable(in, outPtr.Elem()) {
+		return fragments.NewValueToPtr(base), true
+	}
+
+	outPtr, ok = out.Underlying().(*types.Pointer)
+	if ok && typesAreCastable(in, outPtr.Elem()) {
+		return fragments.NewValueToPtrType(base), true
+	}
+
 	inPtr, ok := in.(*types.Pointer)
 	if ok && typesAreCastable(inPtr.Elem(), out) {
 		return fragments.NewPtrToValueFrag(base), true
 	}
-	//
-	//inPtr, ok = in.Underlying().(*types.Pointer)
-	//if ok && typesAreCastable(inPtr.Elem(), out) {
-	//	return fragments.NewCastPtrToValue(base), true
-	//}
-	//
-	//if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
-	//	return fragments.NewCastPtrToPtr(base), true
-	//}
-	//
-	//if typeIsIntegerOrFloat(in) && isString(out) {
-	//	return fragments.NewAssignNumberToString(base), true
-	//}
-	//
-	//if isString(in) && typeIsIntegerOrFloat(out) {
-	//	return fragments.NewParseNumberFromString(base), true
-	//}
-	//
-	//if isTime(in) && isBasic(out, types.Int, types.Int64) {
-	//	return fragments.NewTimeToNumber(base), true
-	//}
-	//
-	//if isBasic(in, types.Int, types.Int64) && isTime(out) {
-	//	return fragments.NewNumberToTime(base), true
-	//}
-	//
-	//if isTime(in) && isString(out) {
-	//	return fragments.NewTimeToString(base), true
-	//}
-	//
-	//if isString(in) && isTime(out) {
-	//	return fragments.NewParseTimeFromString(base), true
-	//}
-	//
-	//if CheckImplementsStringer(in) && isString(out) {
-	//	return fragments.NewAssignStringer(base), true
-	//}
+
+	inPtr, ok = in.Underlying().(*types.Pointer)
+	if ok && typesAreCastable(inPtr.Elem(), out) {
+		return fragments.NewPtrToValueFrag(base), true
+	}
+
+	if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
+		return fragments.NewPtrToPtr(base), true
+	}
+
+	if typeIsIntegerOrFloat(in) && isString(out) {
+		return fragments.NewNumberToString(base), true
+	}
+
+	if isString(in) && typeIsIntegerOrFloat(out) {
+		return fragments.NewNumberFromString(base), true
+	}
+
+	if isTime(in) && isBasic(out, types.Int, types.Int64) {
+		return fragments.NewTimeToNumber2(base), true
+	}
+
+	if isBasic(in, types.Int, types.Int64) && isTime(out) {
+		return fragments.NewNumberToTime2(base), true
+	}
+
+	if isTime(in) && isString(out) {
+		return fragments.NewTimeToString2(base), true
+	}
+
+	if isString(in) && isTime(out) {
+		return fragments.NewTimeFromString(base), true
+	}
+
+	if CheckImplementsStringer(in) && isString(out) {
+		return fragments.NewStringerToString(base), true
+	}
 
 	return nil, false
 }
