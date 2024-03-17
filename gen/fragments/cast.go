@@ -3,33 +3,13 @@ package fragments
 import "reflect"
 
 type Cast struct {
-	BaseMapStatement
-	CastWith string
-}
-
-func NewCast(base BaseMapStatement) *Cast {
-	return &Cast{BaseMapStatement: base}
-}
-
-func (c *Cast) Generate(g *GenerationCtx) (string, error) {
-	c.CastWith = c.CastExpression(c.In, c.Out, g.NameResolver)
-	sourceTemplate :=
-		`result.{{ .OutField }} = 
-			 {{- if ne .CastWith "" }}{{ .CastWith }}({{- end }}
-			 input.{{ .InField }}
-			 {{- if ne .CastWith "" }}){{- end }}`
-
-	return c.RunTemplate(c, sourceTemplate)
-}
-
-type CastField struct {
 	BaseFrag
 	BaseMapStatement
 	outType *Type
 }
 
-func NewCastField(base BaseMapStatement) *CastField {
-	f := &CastField{
+func NewCast(base BaseMapStatement) *Cast {
+	f := &Cast{
 		BaseMapStatement: base,
 	}
 
@@ -40,14 +20,16 @@ func NewCastField(base BaseMapStatement) *CastField {
 	return f
 }
 
-func (f *CastField) Lines() []string {
-	castWith := ""
+func (f *Cast) Lines() []string {
+	w := writer()
 	if f.outType != nil {
-		castWith = f.outType.LocalName
+		w.s(f.outType.LocalName, "(input.", f.InField, ")")
+	} else {
+		w.s("input.", f.InField)
 	}
-	return NewCastF(&OneLinerFrag{Line: "input." + f.InField}, castWith).Lines()
+	return w.Lines()
 }
 
-func (f *CastField) Deps(r *DependencyRegistry) {
+func (f *Cast) Deps(r *DependencyRegistry) {
 	r.Type(f.outType)
 }

@@ -5,21 +5,21 @@ type StructAssign struct {
 	Fragment Fragment
 }
 
-type StructLitFrag struct {
+type StructLit struct {
 	OutType string
 	OutPtr  bool
 	Assigns []StructAssign
 }
 
-func NewStructLit(OutType string, ptr bool, assigns []StructAssign) *StructLitFrag {
-	return &StructLitFrag{
+func NewStructLit(OutType string, ptr bool, assigns []StructAssign) *StructLit {
+	return &StructLit{
 		OutType: OutType,
 		Assigns: assigns,
 		OutPtr:  ptr,
 	}
 }
 
-func (f *StructLitFrag) Lines() []string {
+func (f *StructLit) Lines() []string {
 	preLines := writer()
 	litLines := writer()
 
@@ -41,12 +41,12 @@ func (f *StructLitFrag) Lines() []string {
 	return preLines.s("return ", takePtr, f.OutType, "{").w(litLines).s("}").Lines()
 }
 
-func (f *StructLitFrag) Deps(r *DependencyRegistry) {
+func (f *StructLit) Deps(r *DependencyRegistry) {
 	for _, assign := range f.Assigns {
 		r.Register(assign.Fragment)
 	}
 }
 
-func (f *StructLitFrag) ResVars() []*Var {
+func (f *StructLit) ResVars() []*Var {
 	return nil
 }

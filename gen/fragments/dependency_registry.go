@@ -6,13 +6,6 @@ type VarSet map[*Var]struct{}
 type PkgSet map[*Pkg]struct{}
 type TypeSet map[*Type]struct{}
 
-type Fragment interface {
-	Deps(registry *DependencyRegistry)
-	ResVar() *Var
-
-	Lines() []string
-}
-
 type Var struct {
 	DesiredName string
 	ContextName string
@@ -27,17 +20,6 @@ type Pkg struct {
 type Type struct {
 	Type      types.Type
 	LocalName string // an available name is chosen at generation phase
-}
-
-type BaseFrag struct{}
-
-func (f BaseFrag) Deps(*DependencyRegistry) {}
-func (f BaseFrag) ResVar() *Var {
-	return nil
-}
-
-type DependencyRegister interface {
-	Deps(registry DependencyRegistry)
 }
 
 func NewDependencyRegistry() *DependencyRegistry {

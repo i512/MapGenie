@@ -5,7 +5,6 @@ import (
 	"go/token"
 	"go/types"
 	"mapgenie/entities"
-	"mapgenie/gen"
 	"mapgenie/gen/fragments"
 	"mapgenie/pkg/log"
 	"reflect"
@@ -52,7 +51,7 @@ func createMapping(fieldName string, in, out types.Type) (fragments.Fragment, bo
 	}
 
 	if typesAreCastable(in, out) {
-		return fragments.NewCastField(base), true
+		return fragments.NewCast(base), true
 	}
 
 	outPtr, ok := out.(*types.Pointer)
@@ -62,17 +61,17 @@ func createMapping(fieldName string, in, out types.Type) (fragments.Fragment, bo
 
 	outPtr, ok = out.Underlying().(*types.Pointer)
 	if ok && typesAreCastable(in, outPtr.Elem()) {
-		return fragments.NewValueToPtrType(base), true
+		return fragments.NewValueToPointerType(base), true
 	}
 
 	inPtr, ok := in.(*types.Pointer)
 	if ok && typesAreCastable(inPtr.Elem(), out) {
-		return fragments.NewPtrToValueFrag(base), true
+		return fragments.NewPtrToValue(base), true
 	}
 
 	inPtr, ok = in.Underlying().(*types.Pointer)
 	if ok && typesAreCastable(inPtr.Elem(), out) {
-		return fragments.NewPtrToValueFrag(base), true
+		return fragments.NewPtrToValue(base), true
 	}
 
 	if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
@@ -88,73 +87,6 @@ func createMapping(fieldName string, in, out types.Type) (fragments.Fragment, bo
 	}
 
 	if isTime(in) && isBasic(out, types.Int, types.Int64) {
-		return fragments.NewTimeToNumber2(base), true
-	}
-
-	if isBasic(in, types.Int, types.Int64) && isTime(out) {
-		return fragments.NewNumberToTime2(base), true
-	}
-
-	if isTime(in) && isString(out) {
-		return fragments.NewTimeToString2(base), true
-	}
-
-	if isString(in) && isTime(out) {
-		return fragments.NewTimeFromString(base), true
-	}
-
-	if CheckImplementsStringer(in) && isString(out) {
-		return fragments.NewStringerToString(base), true
-	}
-
-	return nil, false
-}
-
-func _createMapping(fieldName string, in, out types.Type) (gen.MapStatement, bool) {
-	base := fragments.BaseMapStatement{
-		In:       in,
-		Out:      out,
-		InField:  fieldName,
-		OutField: fieldName,
-	}
-
-	if typesAreCastable(in, out) {
-		return fragments.NewCast(base), true
-	}
-
-	outPtr, ok := out.(*types.Pointer)
-	if ok && typesAreCastable(in, outPtr.Elem()) {
-		return fragments.NewCastValueToPtr(base), true
-	}
-
-	outPtr, ok = out.Underlying().(*types.Pointer)
-	if ok && typesAreCastable(in, outPtr.Elem()) {
-		return fragments.NewCastValueToPtrType(base), true
-	}
-
-	inPtr, ok := in.(*types.Pointer)
-	if ok && typesAreCastable(inPtr.Elem(), out) {
-		return fragments.NewCastPtrToValue(base), true
-	}
-
-	inPtr, ok = in.Underlying().(*types.Pointer)
-	if ok && typesAreCastable(inPtr.Elem(), out) {
-		return fragments.NewCastPtrToValue(base), true
-	}
-
-	if inPtr != nil && outPtr != nil && typesAreCastable(inPtr.Elem(), outPtr.Elem()) {
-		return fragments.NewCastPtrToPtr(base), true
-	}
-
-	if typeIsIntegerOrFloat(in) && isString(out) {
-		return fragments.NewAssignNumberToString(base), true
-	}
-
-	if isString(in) && typeIsIntegerOrFloat(out) {
-		return fragments.NewParseNumberFromString(base), true
-	}
-
-	if isTime(in) && isBasic(out, types.Int, types.Int64) {
 		return fragments.NewTimeToNumber(base), true
 	}
 
@@ -167,11 +99,11 @@ func _createMapping(fieldName string, in, out types.Type) (gen.MapStatement, boo
 	}
 
 	if isString(in) && isTime(out) {
-		return fragments.NewParseTimeFromString(base), true
+		return fragments.NewStringToTime(base), true
 	}
 
 	if CheckImplementsStringer(in) && isString(out) {
-		return fragments.NewAssignStringer(base), true
+		return fragments.NewStringerToString(base), true
 	}
 
 	return nil, false
