@@ -26,12 +26,12 @@ func NewValueToPointerType(base BaseMapStatement) *ValueToPointerType {
 
 func (f *ValueToPointerType) Lines() Writer {
 	if f.CastWith == nil {
-		return writer().S("&input.", f.InField)
+		return writer().Ln("&input.", f.InField)
 	}
 
 	return writer().
-		S(f.Var.Name, " := ", f.CastWith.LocalName, "(input.", f.InField, ")").
-		S("&", f.Var.Name)
+		Ln(f.Var.Name, " := ", f.CastWith.LocalName, "(input.", f.InField, ")").
+		Ln("&", f.Var.Name)
 }
 
 func (f *ValueToPointerType) Deps(registry *DependencyRegistry) {

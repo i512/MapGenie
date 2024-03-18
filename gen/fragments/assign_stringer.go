@@ -14,5 +14,5 @@ func NewStringerToString(base BaseMapStatement) *StringerToString {
 }
 
 func (f *StringerToString) Lines() Writer {
-	return writer().S("input.", f.InField, ".String()")
+	return writer().Ln("input.", f.InField, ".String()")
 }

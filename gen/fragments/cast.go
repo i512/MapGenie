@@ -23,9 +23,9 @@ func NewCast(base BaseMapStatement) *Cast {
 func (f *Cast) Lines() Writer {
 	w := writer()
 	if f.outType != nil {
-		w.S(f.outType.LocalName, "(input.", f.InField, ")")
+		w.Ln(f.outType.LocalName, "(input.", f.InField, ")")
 	} else {
-		w.S("input.", f.InField)
+		w.Ln("input.", f.InField)
 	}
 	return w
 }

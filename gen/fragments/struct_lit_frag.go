@@ -26,11 +26,11 @@ func (f *StructLit) Lines() []string {
 	for _, assign := range f.Assigns {
 		fragLines := assign.Fragment.Lines()
 		if assign.Fragment.ResVar() != nil {
-			preLines.W(fragLines)
-			litLines.S(assign.OutField, ": ", assign.Fragment.ResVar().Name, ",")
+			preLines.Merge(fragLines)
+			litLines.Ln(assign.OutField, ": ", assign.Fragment.ResVar().Name, ",")
 		} else {
-			preLines.W(fragLines.PreLastLine())
-			litLines.S(assign.OutField, ": ", fragLines.LastLine(), ",")
+			preLines.Merge(fragLines.PreLastLine())
+			litLines.Ln(assign.OutField, ": ", fragLines.LastLine(), ",")
 		}
 	}
 
@@ -38,7 +38,7 @@ func (f *StructLit) Lines() []string {
 	if f.OutPtr {
 		takePtr = "&"
 	}
-	return preLines.S("return ", takePtr, f.OutType, "{").W(litLines).S("}").Lines()
+	return preLines.Ln("return ", takePtr, f.OutType, "{").Merge(litLines).Ln("}").Lines()
 }
 
 func (f *StructLit) Deps(r *DependencyRegistry) {

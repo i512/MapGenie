@@ -24,17 +24,17 @@ func NewPtrToValue(base BaseMapStatement) *PtrToValue {
 
 func (f *PtrToValue) Lines() Writer {
 	w := writer()
-	w.S("var ", f.Result.Name, " ", f.CastWith.LocalName)
-	w.S("if input.", f.InField, " != nil {").Indent(func(w Writer) {
+	w.Ln("var ", f.Result.Name, " ", f.CastWith.LocalName)
+	w.Ln("if input.", f.InField, " != nil {").Indent(func(w Writer) {
 		if f.CastWith == nil {
-			w.S(f.Result.Name, " = *input.", f.InField)
+			w.Ln(f.Result.Name, " = *input.", f.InField)
 		} else {
-			w.S(f.Result.Name, " = ", f.CastWith.LocalName, "(*input.", f.InField, ")")
+			w.Ln(f.Result.Name, " = ", f.CastWith.LocalName, "(*input.", f.InField, ")")
 		}
 	})
-	w.S("}")
+	w.Ln("}")
 
-	return w.S(f.Result.Name)
+	return w.Ln(f.Result.Name)
 }
 
 func (f *PtrToValue) Deps(r *DependencyRegistry) {

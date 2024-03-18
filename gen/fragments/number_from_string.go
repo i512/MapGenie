@@ -23,16 +23,16 @@ func (f *NumberFromString) Lines() Writer {
 	fun, args := f.funcAndArgs()
 	w := writer()
 	if args == "" {
-		w.S(f.Var.Name, ", _ := ", f.StrConv.LocalName, ".", fun, "(input.", f.InField, ")")
+		w.Ln(f.Var.Name, ", _ := ", f.StrConv.LocalName, ".", fun, "(input.", f.InField, ")")
 	} else {
-		w.S(f.Var.Name, ", _ := ", f.StrConv.LocalName, ".", fun, "(input.", f.InField, ", ", args, ")")
+		w.Ln(f.Var.Name, ", _ := ", f.StrConv.LocalName, ".", fun, "(input.", f.InField, ", ", args, ")")
 	}
 
 	castWith := f.CastWith()
 	if castWith == "" {
-		w.S(f.Var.Name)
+		w.Ln(f.Var.Name)
 	} else {
-		w.S(castWith, "(", f.Var.Name, ")")
+		w.Ln(castWith, "(", f.Var.Name, ")")
 	}
 	return w
 }

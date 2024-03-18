@@ -20,8 +20,8 @@ func NewStringToTime(base BaseMapStatement) *StringToTime {
 }
 
 func (f *StringToTime) Lines() Writer {
-	w := writer().S(f.Var.Name, ", _ := ", f.Time.LocalName, ".Parse(", f.Time.LocalName, ".", f.Format, ", input.", f.InField, ")")
-	w.S(f.Var.Name)
+	w := writer().Ln(f.Var.Name, ", _ := ", f.Time.LocalName, ".Parse(", f.Time.LocalName, ".", f.Format, ", input.", f.InField, ")")
+	w.Ln(f.Var.Name)
 
 	return w
 }

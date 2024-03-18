@@ -1,9 +1,8 @@
 package fragments
 
 type Writer interface {
-	S(...string) Writer
-	A([]string) Writer
-	W(Writer) Writer
+	Ln(...string) Writer
+	Merge(Writer) Writer
 	Indent(func(Writer)) Writer
 	String() string
 	Lines() []string

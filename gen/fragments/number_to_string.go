@@ -16,7 +16,7 @@ func NewNumberToString(base BaseMapStatement) *NumberToString {
 }
 
 func (f *NumberToString) Lines() Writer {
-	return writer().S(f.Fmt.LocalName, ".Sprint(input.", f.InField, ")")
+	return writer().Ln(f.Fmt.LocalName, ".Sprint(input.", f.InField, ")")
 }
 
 func (f *NumberToString) Deps(registry *DependencyRegistry) {

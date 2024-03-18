@@ -20,9 +20,9 @@ func (f *TimeToNumber) Lines() Writer {
 
 	if b, ok := f.Out.(*types.Basic); ok && b.Kind() != types.Int64 {
 		castWith := f.Out.String()
-		w.S(castWith, "(input.", f.InField, ".Unix())")
+		w.Ln(castWith, "(input.", f.InField, ".Unix())")
 	} else {
-		w.S("input.", f.InField, ".Unix()")
+		w.Ln("input.", f.InField, ".Unix()")
 	}
 
 	return w

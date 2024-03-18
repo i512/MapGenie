@@ -18,7 +18,7 @@ func NewTimeToString(base BaseMapStatement) *TimeToString {
 }
 
 func (f *TimeToString) Lines() Writer {
-	w := writer().S("input.", f.InField, ".Format(", f.Time.LocalName, ".", f.Format, ")")
+	w := writer().Ln("input.", f.InField, ".Format(", f.Time.LocalName, ".", f.Format, ")")
 
 	return w
 }

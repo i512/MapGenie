@@ -25,15 +25,15 @@ func NewPtrToPtr(base BaseMapStatement) *PtrToPtr {
 
 func (f *PtrToPtr) Lines() Writer {
 	w := writer()
-	w.S("var ", f.Var.Name, " ", f.CastWith.LocalName)
-	w.S("if input.", f.InField, " != nil {").Indent(func(w Writer) {
+	w.Ln("var ", f.Var.Name, " ", f.CastWith.LocalName)
+	w.Ln("if input.", f.InField, " != nil {").Indent(func(w Writer) {
 		if f.CastWith == nil {
-			w.S(f.Var.Name, " = *input.", f.InField)
+			w.Ln(f.Var.Name, " = *input.", f.InField)
 		} else {
-			w.S(f.Var.Name, " = ", f.CastWith.LocalName, "(*input.", f.InField, ")")
+			w.Ln(f.Var.Name, " = ", f.CastWith.LocalName, "(*input.", f.InField, ")")
 		}
-	}).S("}")
-	w.S("&", f.Var.Name)
+	}).Ln("}")
+	w.Ln("&", f.Var.Name)
 
 	return w
 }

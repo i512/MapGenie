@@ -10,17 +10,12 @@ func writer() *LineWriter {
 	return &LineWriter{}
 }
 
-func (w *LineWriter) S(str ...string) Writer {
+func (w *LineWriter) Ln(str ...string) Writer {
 	w.lines = append(w.lines, strings.Join(str, ""))
 	return w
 }
 
-func (w *LineWriter) A(strs []string) Writer {
-	w.lines = append(w.lines, strs...)
-	return w
-}
-
-func (w *LineWriter) W(w2 Writer) Writer {
+func (w *LineWriter) Merge(w2 Writer) Writer {
 	w.lines = append(w.lines, w2.Lines()...)
 	return w
 }
