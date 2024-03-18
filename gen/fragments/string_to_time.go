@@ -19,11 +19,11 @@ func NewStringToTime(base BaseMapStatement) *StringToTime {
 	return f
 }
 
-func (f *StringToTime) Lines() []string {
-	w := writer().s(f.Var.Name, ", _ := ", f.Time.LocalName, ".Parse(", f.Time.LocalName, ".", f.Format, ", input.", f.InField, ")")
-	w.s(f.Var.Name)
+func (f *StringToTime) Lines() Writer {
+	w := writer().S(f.Var.Name, ", _ := ", f.Time.LocalName, ".Parse(", f.Time.LocalName, ".", f.Format, ", input.", f.InField, ")")
+	w.S(f.Var.Name)
 
-	return w.Lines()
+	return w
 }
 
 func (f *StringToTime) Deps(registry *DependencyRegistry) {

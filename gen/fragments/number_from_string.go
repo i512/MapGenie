@@ -19,22 +19,22 @@ func NewNumberFromString(base BaseMapStatement) *NumberFromString {
 	return f
 }
 
-func (f *NumberFromString) Lines() []string {
+func (f *NumberFromString) Lines() Writer {
 	fun, args := f.funcAndArgs()
 	w := writer()
 	if args == "" {
-		w.s(f.Var.Name, ", _ := ", f.StrConv.LocalName, ".", fun, "(input.", f.InField, ")")
+		w.S(f.Var.Name, ", _ := ", f.StrConv.LocalName, ".", fun, "(input.", f.InField, ")")
 	} else {
-		w.s(f.Var.Name, ", _ := ", f.StrConv.LocalName, ".", fun, "(input.", f.InField, ", ", args, ")")
+		w.S(f.Var.Name, ", _ := ", f.StrConv.LocalName, ".", fun, "(input.", f.InField, ", ", args, ")")
 	}
 
 	castWith := f.CastWith()
 	if castWith == "" {
-		w.s(f.Var.Name)
+		w.S(f.Var.Name)
 	} else {
-		w.s(castWith, "(", f.Var.Name, ")")
+		w.S(castWith, "(", f.Var.Name, ")")
 	}
-	return w.Lines()
+	return w
 }
 
 func (f *NumberFromString) Deps(registry *DependencyRegistry) {

@@ -17,16 +17,16 @@ func NewNumberToTime(base BaseMapStatement) *NumberToTime {
 	return f
 }
 
-func (f *NumberToTime) Lines() []string {
+func (f *NumberToTime) Lines() Writer {
 	w := writer()
 
 	if b, ok := f.In.(*types.Basic); ok && b.Kind() != types.Int64 {
-		w.s(f.Time.LocalName, ".Unix(int64(input.", f.InField, "), 0).UTC()")
+		w.S(f.Time.LocalName, ".Unix(int64(input.", f.InField, "), 0).UTC()")
 	} else {
-		w.s(f.Time.LocalName, ".Unix(input.", f.InField, ", 0).UTC()")
+		w.S(f.Time.LocalName, ".Unix(input.", f.InField, ", 0).UTC()")
 	}
 
-	return w.Lines()
+	return w
 }
 
 func (f *NumberToTime) Deps(registry *DependencyRegistry) {

@@ -15,15 +15,15 @@ func NewTimeToNumber(base BaseMapStatement) *TimeToNumber {
 	return f
 }
 
-func (f *TimeToNumber) Lines() []string {
+func (f *TimeToNumber) Lines() Writer {
 	w := writer()
 
 	if b, ok := f.Out.(*types.Basic); ok && b.Kind() != types.Int64 {
 		castWith := f.Out.String()
-		w.s(castWith, "(input.", f.InField, ".Unix())")
+		w.S(castWith, "(input.", f.InField, ".Unix())")
 	} else {
-		w.s("input.", f.InField, ".Unix()")
+		w.S("input.", f.InField, ".Unix()")
 	}
 
-	return w.Lines()
+	return w
 }

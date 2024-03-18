@@ -23,14 +23,14 @@ func NewValueToPtr(base BaseMapStatement) *ValueToPtr {
 	return f
 }
 
-func (f *ValueToPtr) Lines() []string {
+func (f *ValueToPtr) Lines() Writer {
 	if f.CastWith == nil {
-		return writer().s("&input.", f.InField).Lines()
+		return writer().S("&input.", f.InField)
 	}
 
 	return writer().
-		s(f.Var.Name, " := ", f.CastWith.LocalName, "(input.", f.InField, ")").
-		s("&", f.Var.Name).Lines()
+		S(f.Var.Name, " := ", f.CastWith.LocalName, "(input.", f.InField, ")").
+		S("&", f.Var.Name)
 }
 
 func (f *ValueToPtr) Deps(registry *DependencyRegistry) {

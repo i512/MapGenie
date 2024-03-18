@@ -13,6 +13,6 @@ func NewStringerToString(base BaseMapStatement) *StringerToString {
 	return f
 }
 
-func (f *StringerToString) Lines() []string {
-	return writer().s("input.", f.InField, ".String()").Lines()
+func (f *StringerToString) Lines() Writer {
+	return writer().S("input.", f.InField, ".String()")
 }

@@ -67,13 +67,6 @@ func FuncAst(ctx context.Context, tf entities.TargetFunc, fset *token.FileSet, i
 		Resolver: imports,
 	}
 
-	mappings, err := generateExpressions(ctx, tf.Statements, imports)
-	if err != nil {
-		return nil, err
-	}
-
-	data.Mappings = mappings
-
 	registry := fragments.NewDependencyRegistry()
 
 	// TODO: extract
@@ -120,23 +113,4 @@ func generateAst(ctx context.Context, fset *token.FileSet, data MapTemplateData)
 	fset.RemoveFile(fset.File(file.Pos()))
 
 	return file.Decls[0].(*ast.FuncDecl), nil
-}
-
-func generateExpressions(ctx context.Context, statements []entities.Statement, imports *FileImports) ([]string, error) {
-	generationCtx := &fragments.GenerationCtx{
-		Ctx:          ctx,
-		NameResolver: imports,
-	}
-
-	results := make([]string, len(statements))
-	for i, m := range statements {
-		code, err := m.Generate(generationCtx)
-		if err != nil {
-			return nil, fmt.Errorf("%+v fragment generation: %w", m, err)
-		}
-
-		results[i] = code
-	}
-
-	return results, nil
 }

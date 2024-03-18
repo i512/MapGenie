@@ -17,10 +17,10 @@ func NewTimeToString(base BaseMapStatement) *TimeToString {
 	return f
 }
 
-func (f *TimeToString) Lines() []string {
-	w := writer().s("input.", f.InField, ".Format(", f.Time.LocalName, ".", f.Format, ")")
+func (f *TimeToString) Lines() Writer {
+	w := writer().S("input.", f.InField, ".Format(", f.Time.LocalName, ".", f.Format, ")")
 
-	return w.Lines()
+	return w
 }
 
 func (f *TimeToString) Deps(registry *DependencyRegistry) {

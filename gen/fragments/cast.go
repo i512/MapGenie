@@ -20,14 +20,14 @@ func NewCast(base BaseMapStatement) *Cast {
 	return f
 }
 
-func (f *Cast) Lines() []string {
+func (f *Cast) Lines() Writer {
 	w := writer()
 	if f.outType != nil {
-		w.s(f.outType.LocalName, "(input.", f.InField, ")")
+		w.S(f.outType.LocalName, "(input.", f.InField, ")")
 	} else {
-		w.s("input.", f.InField)
+		w.S("input.", f.InField)
 	}
-	return w.Lines()
+	return w
 }
 
 func (f *Cast) Deps(r *DependencyRegistry) {
