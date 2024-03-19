@@ -1,6 +1,10 @@
 package fragments
 
-import "strings"
+import (
+	"fmt"
+	"mapgenie/entities"
+	"strings"
+)
 
 type LineWriter struct {
 	lines []string
@@ -10,17 +14,22 @@ func writer() *LineWriter {
 	return &LineWriter{}
 }
 
-func (w *LineWriter) Ln(str ...string) Writer {
+func (w *LineWriter) Ln(str ...string) entities.Writer {
 	w.lines = append(w.lines, strings.Join(str, ""))
 	return w
 }
 
-func (w *LineWriter) Merge(w2 Writer) Writer {
+func (w *LineWriter) Lnf(pattern string, args ...any) entities.Writer {
+	w.lines = append(w.lines, fmt.Sprintf(pattern, args...))
+	return w
+}
+
+func (w *LineWriter) Merge(w2 entities.Writer) entities.Writer {
 	w.lines = append(w.lines, w2.Lines()...)
 	return w
 }
 
-func (w *LineWriter) Indent(f func(lineWriter Writer)) Writer {
+func (w *LineWriter) Indent(f func(lineWriter entities.Writer)) entities.Writer {
 	f(w)
 	return w
 }
@@ -33,7 +42,7 @@ func (w *LineWriter) Lines() []string {
 	return w.lines
 }
 
-func (w *LineWriter) PreLastLine() Writer {
+func (w *LineWriter) PreLastLine() entities.Writer {
 	return &LineWriter{lines: w.lines[:len(w.lines)-1]}
 }
 

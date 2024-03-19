@@ -1,5 +1,7 @@
 package fragments
 
+import "mapgenie/entities"
+
 type StringerToString struct {
 	BaseMapStatement
 	BaseFrag
@@ -13,6 +15,6 @@ func NewStringerToString(base BaseMapStatement) *StringerToString {
 	return f
 }
 
-func (f *StringerToString) Lines() Writer {
+func (f *StringerToString) Result() entities.Writer {
 	return writer().Ln("input.", f.InField, ".String()")
 }

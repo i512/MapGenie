@@ -5,7 +5,6 @@ import (
 	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/packages"
-	"mapgenie/gen/fragments"
 )
 
 type TargetFile struct {
@@ -20,10 +19,9 @@ func (f TargetFile) Name() string {
 }
 
 type TargetFunc struct {
-	FuncDecl   *ast.FuncDecl
-	In, Out    Argument
-	Statements []Statement
-	Fragments  map[string]fragments.Fragment
+	FuncDecl  *ast.FuncDecl
+	In, Out   Argument
+	Fragments map[string]Fragment
 }
 
 func (f TargetFunc) Name() string {
@@ -35,10 +33,6 @@ type Argument struct {
 	Struct *types.Struct
 	IsPtr  bool
 	Local  bool // Type is defined in target package
-}
-
-type Statement interface {
-	Generate(*fragments.GenerationCtx) (string, error)
 }
 
 func (s Argument) FieldMap() map[string]types.Type {

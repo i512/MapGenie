@@ -10,10 +10,10 @@ import (
 	"reflect"
 )
 
-func MappableFields(ctx context.Context, tfs entities.TargetFunc) map[string]fragments.Fragment {
+func MappableFields(ctx context.Context, tfs entities.TargetFunc) map[string]entities.Fragment {
 	in := tfs.In.FieldMap()
 
-	list := make(map[string]fragments.Fragment)
+	list := make(map[string]entities.Fragment)
 
 	for i := 0; i < tfs.Out.Struct.NumFields(); i++ {
 		field := tfs.Out.Struct.Field(i)
@@ -42,7 +42,7 @@ func MappableFields(ctx context.Context, tfs entities.TargetFunc) map[string]fra
 	return list
 }
 
-func createMapping(fieldName string, in, out types.Type) (fragments.Fragment, bool) {
+func createMapping(fieldName string, in, out types.Type) (entities.Fragment, bool) {
 	base := fragments.BaseMapStatement{
 		In:       in,
 		Out:      out,

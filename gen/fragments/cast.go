@@ -1,11 +1,14 @@
 package fragments
 
-import "reflect"
+import (
+	"mapgenie/entities"
+	"reflect"
+)
 
 type Cast struct {
 	BaseFrag
 	BaseMapStatement
-	outType *Type
+	outType *entities.Type
 }
 
 func NewCast(base BaseMapStatement) *Cast {
@@ -14,13 +17,13 @@ func NewCast(base BaseMapStatement) *Cast {
 	}
 
 	if !reflect.DeepEqual(base.In, base.Out) {
-		f.outType = &Type{Type: base.Out}
+		f.outType = &entities.Type{Type: base.Out}
 	}
 
 	return f
 }
 
-func (f *Cast) Lines() Writer {
+func (f *Cast) Result() entities.Writer {
 	w := writer()
 	if f.outType != nil {
 		w.Ln(f.outType.LocalName, "(input.", f.InField, ")")
@@ -30,6 +33,6 @@ func (f *Cast) Lines() Writer {
 	return w
 }
 
-func (f *Cast) Deps(r *DependencyRegistry) {
+func (f *Cast) Deps(r entities.DepReg) {
 	r.Type(f.outType)
 }

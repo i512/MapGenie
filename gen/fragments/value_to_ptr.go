@@ -2,12 +2,13 @@ package fragments
 
 import (
 	"go/types"
+	"mapgenie/entities"
 	"reflect"
 )
 
 type ValueToPtr struct {
-	CastWith *Type
-	Var      *Var
+	CastWith *entities.Type
+	Var      *entities.Var
 	BaseMapStatement
 	BaseFrag
 }
@@ -17,23 +18,29 @@ func NewValueToPtr(base BaseMapStatement) *ValueToPtr {
 
 	outElemType := base.Out.(*types.Pointer).Elem()
 	if !reflect.DeepEqual(base.In, outElemType) {
-		f.CastWith = &Type{Type: outElemType}
-		f.Var = &Var{DesiredName: base.OutField}
+		f.CastWith = &entities.Type{Type: outElemType}
+		f.Var = &entities.Var{DesiredName: base.OutField}
 	}
 	return f
 }
 
-func (f *ValueToPtr) Lines() Writer {
+func (f *ValueToPtr) Body() entities.Writer {
+	if f.CastWith == nil {
+		return writer()
+	}
+
+	return writer().Ln(f.Var.Name, " := ", f.CastWith.LocalName, "(input.", f.InField, ")")
+}
+
+func (f *ValueToPtr) Result() entities.Writer {
 	if f.CastWith == nil {
 		return writer().Ln("&input.", f.InField)
 	}
 
-	return writer().
-		Ln(f.Var.Name, " := ", f.CastWith.LocalName, "(input.", f.InField, ")").
-		Ln("&", f.Var.Name)
+	return writer().Ln("&", f.Var.Name)
 }
 
-func (f *ValueToPtr) Deps(registry *DependencyRegistry) {
+func (f *ValueToPtr) Deps(registry entities.DepReg) {
 	registry.Type(f.CastWith)
 	registry.Var(f.Var)
 }

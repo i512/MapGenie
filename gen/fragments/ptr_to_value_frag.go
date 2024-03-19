@@ -1,43 +1,50 @@
 package fragments
 
-import "reflect"
+import (
+	"mapgenie/entities"
+	"reflect"
+)
 
 type PtrToValue struct {
 	BaseFrag
 	BaseMapStatement
-	CastWith *Type
-	Result   *Var
+	CastWith *entities.Type
+	Var      *entities.Var
 }
 
 func NewPtrToValue(base BaseMapStatement) *PtrToValue {
 	f := &PtrToValue{
 		BaseMapStatement: base,
-		Result:           &Var{DesiredName: base.OutField},
+		Var:              &entities.Var{DesiredName: base.OutField},
 	}
 
 	if !reflect.DeepEqual(f.In, f.Out) {
-		f.CastWith = &Type{Type: base.Out}
+		f.CastWith = &entities.Type{Type: base.Out}
 	}
 
 	return f
 }
 
-func (f *PtrToValue) Lines() Writer {
+func (f *PtrToValue) Body() entities.Writer {
 	w := writer()
-	w.Ln("var ", f.Result.Name, " ", f.CastWith.LocalName)
-	w.Ln("if input.", f.InField, " != nil {").Indent(func(w Writer) {
+	w.Ln("var ", f.Var.Name, " ", f.CastWith.LocalName)
+	w.Ln("if input.", f.InField, " != nil {").Indent(func(w entities.Writer) {
 		if f.CastWith == nil {
-			w.Ln(f.Result.Name, " = *input.", f.InField)
+			w.Ln(f.Var.Name, " = *input.", f.InField)
 		} else {
-			w.Ln(f.Result.Name, " = ", f.CastWith.LocalName, "(*input.", f.InField, ")")
+			w.Ln(f.Var.Name, " = ", f.CastWith.LocalName, "(*input.", f.InField, ")")
 		}
 	})
 	w.Ln("}")
 
-	return w.Ln(f.Result.Name)
+	return w
 }
 
-func (f *PtrToValue) Deps(r *DependencyRegistry) {
+func (f *PtrToValue) Result() entities.Writer {
+	return writer().Ln(f.Var.Name)
+}
+
+func (f *PtrToValue) Deps(r entities.DepReg) {
 	r.Type(f.CastWith)
-	r.Var(f.Result)
+	r.Var(f.Var)
 }

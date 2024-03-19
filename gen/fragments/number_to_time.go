@@ -1,9 +1,12 @@
 package fragments
 
-import "go/types"
+import (
+	"go/types"
+	"mapgenie/entities"
+)
 
 type NumberToTime struct {
-	Time *Pkg
+	Time *entities.Pkg
 	BaseMapStatement
 	BaseFrag
 }
@@ -11,13 +14,13 @@ type NumberToTime struct {
 func NewNumberToTime(base BaseMapStatement) *NumberToTime {
 	f := &NumberToTime{
 		BaseMapStatement: base,
-		Time:             &Pkg{Path: "time"},
+		Time:             &entities.Pkg{Path: "time"},
 	}
 
 	return f
 }
 
-func (f *NumberToTime) Lines() Writer {
+func (f *NumberToTime) Result() entities.Writer {
 	w := writer()
 
 	if b, ok := f.In.(*types.Basic); ok && b.Kind() != types.Int64 {
@@ -29,6 +32,6 @@ func (f *NumberToTime) Lines() Writer {
 	return w
 }
 
-func (f *NumberToTime) Deps(registry *DependencyRegistry) {
+func (f *NumberToTime) Deps(registry entities.DepReg) {
 	registry.Pkg(f.Time)
 }

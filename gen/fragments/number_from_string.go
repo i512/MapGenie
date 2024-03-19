@@ -1,10 +1,13 @@
 package fragments
 
-import "go/types"
+import (
+	"go/types"
+	"mapgenie/entities"
+)
 
 type NumberFromString struct {
-	StrConv *Pkg
-	Var     *Var
+	StrConv *entities.Pkg
+	Var     *entities.Var
 	BaseMapStatement
 	BaseFrag
 }
@@ -12,14 +15,14 @@ type NumberFromString struct {
 func NewNumberFromString(base BaseMapStatement) *NumberFromString {
 	f := &NumberFromString{
 		BaseMapStatement: base,
-		StrConv:          &Pkg{Path: "strconv"},
-		Var:              &Var{DesiredName: base.OutField},
+		StrConv:          &entities.Pkg{Path: "strconv"},
+		Var:              &entities.Var{DesiredName: base.OutField},
 	}
 
 	return f
 }
 
-func (f *NumberFromString) Lines() Writer {
+func (f *NumberFromString) Body() entities.Writer {
 	fun, args := f.funcAndArgs()
 	w := writer()
 	if args == "" {
@@ -28,16 +31,21 @@ func (f *NumberFromString) Lines() Writer {
 		w.Ln(f.Var.Name, ", _ := ", f.StrConv.LocalName, ".", fun, "(input.", f.InField, ", ", args, ")")
 	}
 
-	castWith := f.CastWith()
-	if castWith == "" {
-		w.Ln(f.Var.Name)
-	} else {
-		w.Ln(castWith, "(", f.Var.Name, ")")
-	}
 	return w
 }
 
-func (f *NumberFromString) Deps(registry *DependencyRegistry) {
+func (f *NumberFromString) Result() entities.Writer {
+	w := writer()
+
+	castWith := f.CastWith()
+	if castWith == "" {
+		return w.Ln(f.Var.Name)
+	}
+
+	return w.Ln(castWith, "(", f.Var.Name, ")")
+}
+
+func (f *NumberFromString) Deps(registry entities.DepReg) {
 	registry.Pkg(f.StrConv)
 	registry.Var(f.Var)
 }

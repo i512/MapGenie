@@ -1,7 +1,9 @@
 package fragments
 
+import "mapgenie/entities"
+
 type NumberToString struct {
-	Fmt *Pkg
+	Fmt *entities.Pkg
 	BaseMapStatement
 	BaseFrag
 }
@@ -9,16 +11,16 @@ type NumberToString struct {
 func NewNumberToString(base BaseMapStatement) *NumberToString {
 	f := &NumberToString{
 		BaseMapStatement: base,
-		Fmt:              &Pkg{Path: "fmt"},
+		Fmt:              &entities.Pkg{Path: "fmt"},
 	}
 
 	return f
 }
 
-func (f *NumberToString) Lines() Writer {
+func (f *NumberToString) Result() entities.Writer {
 	return writer().Ln(f.Fmt.LocalName, ".Sprint(input.", f.InField, ")")
 }
 
-func (f *NumberToString) Deps(registry *DependencyRegistry) {
+func (f *NumberToString) Deps(registry entities.DepReg) {
 	registry.Pkg(f.Fmt)
 }

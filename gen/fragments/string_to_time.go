@@ -1,8 +1,10 @@
 package fragments
 
+import "mapgenie/entities"
+
 type StringToTime struct {
-	Time   *Pkg
-	Var    *Var
+	Time   *entities.Pkg
+	Var    *entities.Var
 	Format string
 	BaseMapStatement
 	BaseFrag
@@ -11,22 +13,24 @@ type StringToTime struct {
 func NewStringToTime(base BaseMapStatement) *StringToTime {
 	f := &StringToTime{
 		BaseMapStatement: base,
-		Var:              &Var{DesiredName: base.OutField},
-		Time:             &Pkg{Path: "time"},
+		Var:              &entities.Var{DesiredName: base.OutField},
+		Time:             &entities.Pkg{Path: "time"},
 		Format:           "RFC3339",
 	}
 
 	return f
 }
 
-func (f *StringToTime) Lines() Writer {
+func (f *StringToTime) Body() entities.Writer {
 	w := writer().Ln(f.Var.Name, ", _ := ", f.Time.LocalName, ".Parse(", f.Time.LocalName, ".", f.Format, ", input.", f.InField, ")")
-	w.Ln(f.Var.Name)
 
 	return w
 }
+func (f *StringToTime) Result() entities.Writer {
+	return writer().Ln(f.Var.Name)
+}
 
-func (f *StringToTime) Deps(registry *DependencyRegistry) {
+func (f *StringToTime) Deps(registry entities.DepReg) {
 	registry.Pkg(f.Time)
 	registry.Var(f.Var)
 }

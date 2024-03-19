@@ -1,6 +1,9 @@
 package fragments
 
-import "go/types"
+import (
+	"go/types"
+	"mapgenie/entities"
+)
 
 type TimeToNumber struct {
 	BaseMapStatement
@@ -15,7 +18,7 @@ func NewTimeToNumber(base BaseMapStatement) *TimeToNumber {
 	return f
 }
 
-func (f *TimeToNumber) Lines() Writer {
+func (f *TimeToNumber) Result() entities.Writer {
 	w := writer()
 
 	if b, ok := f.Out.(*types.Basic); ok && b.Kind() != types.Int64 {
