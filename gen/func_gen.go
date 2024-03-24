@@ -20,20 +20,9 @@ type MapTemplateData struct {
 
 func FuncAst(ctx context.Context, tf entities.TargetFunc, fset *token.FileSet, imports *FileImports) (*ast.FuncDecl, error) {
 	mapFunc := fragments.NewMapFunc(tf)
-	registry := fragments.NewDependencyRegistry()
+	registry := NewDependencyRegistry()
 	registry.Register(mapFunc)
-
-	for t, _ := range registry.TypeSet {
-		t.LocalName = imports.ResolveTypeName(t.Type)
-	}
-
-	for pkg, _ := range registry.PkgSet {
-		pkg.LocalName = imports.ResolvePkgImport(pkg.Path)
-	}
-
-	for v, _ := range registry.VarSet {
-		v.Name = v.DesiredName
-	}
+	registry.Setup(imports)
 
 	return generateAst(ctx, fset, mapFunc.Result().String())
 }
