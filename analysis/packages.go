@@ -16,13 +16,11 @@ func FindTargetsInPackages(ctx context.Context, patterns ...string) []entities.T
 	cfg := packages.Config{
 		Fset: fset,
 		Mode: packages.NeedTypes |
-			packages.NeedTypesSizes |
 			packages.NeedSyntax |
 			packages.NeedTypesInfo |
 			packages.NeedImports |
 			packages.NeedName |
-			packages.NeedFiles |
-			packages.NeedCompiledGoFiles,
+			packages.NeedFiles,
 	}
 
 	pkgs, err := packages.Load(&cfg, patterns...)
