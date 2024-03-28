@@ -23,17 +23,17 @@ type FileAnalysis struct {
 	pkg  *packages.Package
 	fset *token.FileSet
 	ast  *ast.File
+
+	providers []*types.Func
 }
 
-func NewFileAnalysis(
-	pkg *packages.Package,
-	fset *token.FileSet,
-	ast *ast.File,
-) *FileAnalysis {
+func NewFileAnalysis(pkg *packages.Package, fset *token.FileSet, ast *ast.File, providers []*types.Func) *FileAnalysis {
 	return &FileAnalysis{
 		pkg:  pkg,
 		fset: fset,
 		ast:  ast,
+
+		providers: providers,
 	}
 }
 
@@ -89,7 +89,7 @@ func (file *FileAnalysis) targetFunc(ctx context.Context, f *ast.FuncDecl) *enti
 		return nil
 	}
 
-	target.Fragments = typematch.MappableFields(ctx, target)
+	target.Fragments = typematch.MappableFields(ctx, target, file.providers)
 
 	return &target
 }

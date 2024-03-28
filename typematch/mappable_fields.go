@@ -10,7 +10,7 @@ import (
 	"reflect"
 )
 
-func MappableFields(ctx context.Context, tfs entities.TargetFunc) map[string]entities.Fragment {
+func MappableFields(ctx context.Context, tfs entities.TargetFunc, providers []*types.Func) map[string]entities.Fragment {
 	in := tfs.In.FieldMap()
 
 	list := make(map[string]entities.Fragment)
@@ -31,7 +31,7 @@ func MappableFields(ctx context.Context, tfs entities.TargetFunc) map[string]ent
 			continue
 		}
 
-		mapping, ok := createMapping(outFieldName, inFieldType, outFieldType)
+		mapping, ok := createMapping(outFieldName, inFieldType, outFieldType, providers)
 		if !ok {
 			continue
 		}
@@ -42,7 +42,7 @@ func MappableFields(ctx context.Context, tfs entities.TargetFunc) map[string]ent
 	return list
 }
 
-func createMapping(fieldName string, in, out types.Type) (entities.Fragment, bool) {
+func createMapping(fieldName string, in, out types.Type, providers []*types.Func) (entities.Fragment, bool) {
 	base := fragments.BaseMapStatement{
 		In:       in,
 		Out:      out,
@@ -52,6 +52,10 @@ func createMapping(fieldName string, in, out types.Type) (entities.Fragment, boo
 
 	if typesAreCastable(in, out) {
 		return fragments.NewCast(base), true
+	}
+
+	if provider := FindProvider(in, out, providers); provider != nil {
+		return fragments.NewProviderCall(base, provider), true
 	}
 
 	outPtr, ok := out.(*types.Pointer)

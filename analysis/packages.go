@@ -2,10 +2,14 @@ package analysis
 
 import (
 	"context"
+	"go/ast"
 	"go/token"
+	"go/types"
+	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
 	"mapgenie/entities"
 	"mapgenie/pkg/log"
+	"regexp"
 	"strings"
 )
 
@@ -39,8 +43,10 @@ func FindTargetsInPackages(ctx context.Context, patterns ...string) []entities.T
 	for _, pkg := range pkgs {
 		pkgCtx := log.Fold(ctx, "package: %s", pkg.Name)
 
+		providers := findProviders(pkg)
+
 		for _, file := range pkg.Syntax {
-			file := NewFileAnalysis(pkg, fset, file)
+			file := NewFileAnalysis(pkg, fset, file, providers)
 			targetFile := file.FindTargets(pkgCtx)
 			if targetFile == nil {
 				continue
@@ -51,4 +57,34 @@ func FindTargetsInPackages(ctx context.Context, patterns ...string) []entities.T
 	}
 
 	return targetFiles
+}
+
+func findProviders(pkg *packages.Package) []*types.Func {
+	funcs := make([]*types.Func, 0)
+
+	for _, file := range pkg.Syntax {
+		astutil.Apply(file, nil, func(cursor *astutil.Cursor) bool {
+			funcDecl, ok := cursor.Node().(*ast.FuncDecl)
+			if !ok || !isProviderFunc(funcDecl) {
+				return true
+			}
+
+			funcType, ok := pkg.Types.Scope().Lookup(funcDecl.Name.Name).(*types.Func)
+			if !ok {
+				return true
+			}
+
+			funcs = append(funcs, funcType)
+
+			return true
+		})
+	}
+
+	return funcs
+}
+
+var providerFuncMagicComment = regexp.MustCompile(`^\w+ magic provider`)
+
+func isProviderFunc(f *ast.FuncDecl) bool {
+	return f.Doc != nil && providerFuncMagicComment.MatchString(f.Doc.Text())
 }
