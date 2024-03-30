@@ -1,8 +1,8 @@
 package custom_fmt_included
 
 import (
-	"mapgenie/test/casts_number_types_to_and_from_string/custom_fmt_included/fmt"
-	"mapgenie/test/casts_number_types_to_and_from_string/structs"
+	"github.com/i512/mapgenie/test/casts_number_types_to_and_from_string/custom_fmt_included/fmt"
+	"github.com/i512/mapgenie/test/casts_number_types_to_and_from_string/structs"
 )
 
 type Unused2 fmt.Type

@@ -1,15 +1,15 @@
 package resolves_name_collisions_when_importing_packages
 
 import (
+	"github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/aliased"
+	funccollision2 "github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/funccollision"
+	"github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/imported"
+	typecollision2 "github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/typecollision"
+	varcollision2 "github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/varcollision"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go/parser"
 	"go/token"
-	"mapgenie/test/resolves_name_collisions_when_importing_packages/aliased"
-	funccollision2 "mapgenie/test/resolves_name_collisions_when_importing_packages/funccollision"
-	"mapgenie/test/resolves_name_collisions_when_importing_packages/imported"
-	typecollision2 "mapgenie/test/resolves_name_collisions_when_importing_packages/typecollision"
-	varcollision2 "mapgenie/test/resolves_name_collisions_when_importing_packages/varcollision"
 	"strings"
 	"testing"
 )
@@ -45,11 +45,11 @@ func TestUsesExistingImports(t *testing.T) {
 	}
 
 	assert.Equal(t, map[string]string{
-		"mapgenie/test/resolves_name_collisions_when_importing_packages/aliased":  "aliased3",
-		"mapgenie/test/resolves_name_collisions_when_importing_packages/imported": "",
+		"github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/aliased":  "aliased3",
+		"github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/imported": "",
 
-		"mapgenie/test/resolves_name_collisions_when_importing_packages/funccollision": "funccollision2",
-		"mapgenie/test/resolves_name_collisions_when_importing_packages/varcollision":  "varcollision2",
-		"mapgenie/test/resolves_name_collisions_when_importing_packages/typecollision": "typecollision2",
+		"github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/funccollision": "funccollision2",
+		"github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/varcollision":  "varcollision2",
+		"github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/typecollision": "typecollision2",
 	}, imports)
 }

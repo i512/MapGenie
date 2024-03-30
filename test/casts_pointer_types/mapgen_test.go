@@ -1,8 +1,8 @@
 package casts_pointer_types
 
 import (
+	"github.com/i512/mapgenie/pkg/ptr"
 	"github.com/stretchr/testify/assert"
-	"mapgenie/pkg/ptr"
 	"testing"
 )
 

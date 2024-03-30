@@ -2,13 +2,13 @@ package analysis
 
 import (
 	"context"
+	"github.com/i512/mapgenie/entities"
+	"github.com/i512/mapgenie/pkg/log"
 	"go/ast"
 	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
-	"mapgenie/entities"
-	"mapgenie/pkg/log"
 	"regexp"
 	"strings"
 )

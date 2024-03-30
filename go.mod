@@ -1,4 +1,4 @@
-module mapgenie
+module github.com/i512/mapgenie
 
 go 1.21
 

@@ -2,7 +2,7 @@ package fragments
 
 import (
 	"fmt"
-	"mapgenie/entities"
+	"github.com/i512/mapgenie/entities"
 	"strings"
 )
 

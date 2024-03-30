@@ -1,8 +1,8 @@
 package fragments
 
 import (
+	"github.com/i512/mapgenie/entities"
 	"go/types"
-	"mapgenie/entities"
 )
 
 type TimeToNumber struct {

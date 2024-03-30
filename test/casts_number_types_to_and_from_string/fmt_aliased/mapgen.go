@@ -2,7 +2,7 @@ package fmt_aliased
 
 import (
 	fmt "bytes"
-	"mapgenie/test/casts_number_types_to_and_from_string/structs"
+	"github.com/i512/mapgenie/test/casts_number_types_to_and_from_string/structs"
 )
 
 type Unused fmt.Buffer

@@ -2,12 +2,12 @@ package casts_number_types_to_and_from_string
 
 import (
 	"fmt"
+	"github.com/i512/mapgenie/test/casts_number_types_to_and_from_string/custom_fmt_included"
+	"github.com/i512/mapgenie/test/casts_number_types_to_and_from_string/fmt_aliased"
+	"github.com/i512/mapgenie/test/casts_number_types_to_and_from_string/fmt_defined"
+	"github.com/i512/mapgenie/test/casts_number_types_to_and_from_string/fmt_included"
+	"github.com/i512/mapgenie/test/casts_number_types_to_and_from_string/structs"
 	"github.com/stretchr/testify/assert"
-	"mapgenie/test/casts_number_types_to_and_from_string/custom_fmt_included"
-	"mapgenie/test/casts_number_types_to_and_from_string/fmt_aliased"
-	"mapgenie/test/casts_number_types_to_and_from_string/fmt_defined"
-	"mapgenie/test/casts_number_types_to_and_from_string/fmt_included"
-	"mapgenie/test/casts_number_types_to_and_from_string/structs"
 	"strconv"
 	"testing"
 )

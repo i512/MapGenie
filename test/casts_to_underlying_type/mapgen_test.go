@@ -1,8 +1,8 @@
 package casts_to_underlying_type
 
 import (
+	"github.com/i512/mapgenie/test/casts_to_underlying_type/other"
 	"github.com/stretchr/testify/assert"
-	"mapgenie/test/casts_to_underlying_type/other"
 	"testing"
 )
 

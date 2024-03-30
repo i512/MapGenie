@@ -3,12 +3,12 @@ package gen
 import (
 	"context"
 	"fmt"
+	"github.com/i512/mapgenie/pkg/log"
 	"go/ast"
 	"go/token"
 	"go/types"
 	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
-	"mapgenie/pkg/log"
 	"regexp"
 	"strings"
 )

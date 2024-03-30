@@ -1,7 +1,7 @@
 package fragments
 
 import (
-	"mapgenie/entities"
+	"github.com/i512/mapgenie/entities"
 	"reflect"
 )
 

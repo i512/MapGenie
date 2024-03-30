@@ -2,12 +2,12 @@ package changes
 
 import (
 	"context"
+	"github.com/i512/mapgenie/entities"
+	"github.com/i512/mapgenie/gen"
+	"github.com/i512/mapgenie/pkg/log"
 	"go/ast"
 	"go/format"
 	"go/token"
-	"mapgenie/entities"
-	"mapgenie/gen"
-	"mapgenie/pkg/log"
 	"os"
 )
 

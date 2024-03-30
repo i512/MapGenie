@@ -1,6 +1,6 @@
 package casts_to_underlying_type
 
-import "mapgenie/test/casts_to_underlying_type/other"
+import "github.com/i512/mapgenie/test/casts_to_underlying_type/other"
 
 // MapAB map this pls
 func MapAB(input A) B {

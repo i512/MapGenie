@@ -1,8 +1,8 @@
 package maps_imported_structs
 
 import (
+	"github.com/i512/mapgenie/test/maps_imported_structs/imported/b"
 	"github.com/stretchr/testify/assert"
-	"mapgenie/test/maps_imported_structs/imported/b"
 	"testing"
 )
 

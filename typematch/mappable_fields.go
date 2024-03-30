@@ -2,11 +2,11 @@ package typematch
 
 import (
 	"context"
+	"github.com/i512/mapgenie/entities"
+	"github.com/i512/mapgenie/gen/fragments"
+	"github.com/i512/mapgenie/pkg/log"
 	"go/token"
 	"go/types"
-	"mapgenie/entities"
-	"mapgenie/gen/fragments"
-	"mapgenie/pkg/log"
 	"reflect"
 )
 

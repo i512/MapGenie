@@ -1,7 +1,7 @@
 package fmt_defined
 
 import (
-	"mapgenie/test/casts_number_types_to_and_from_string/structs"
+	"github.com/i512/mapgenie/test/casts_number_types_to_and_from_string/structs"
 )
 
 func fmt() {

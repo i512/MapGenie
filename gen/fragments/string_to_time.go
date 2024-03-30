@@ -1,6 +1,6 @@
 package fragments
 
-import "mapgenie/entities"
+import "github.com/i512/mapgenie/entities"
 
 type StringToTime struct {
 	Time   *entities.Pkg

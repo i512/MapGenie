@@ -3,12 +3,12 @@ package gen
 import (
 	"context"
 	"fmt"
+	"github.com/i512/mapgenie/entities"
+	"github.com/i512/mapgenie/gen/fragments"
+	"github.com/i512/mapgenie/pkg/log"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"mapgenie/entities"
-	"mapgenie/gen/fragments"
-	"mapgenie/pkg/log"
 )
 
 type MapTemplateData struct {

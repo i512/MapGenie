@@ -2,7 +2,7 @@ package gen
 
 import (
 	"fmt"
-	"mapgenie/entities"
+	"github.com/i512/mapgenie/entities"
 )
 
 type OrderedSet[V comparable] struct {

@@ -1,11 +1,11 @@
 package resolves_name_collisions_when_importing_packages
 
 import (
-	"mapgenie/test/resolves_name_collisions_when_importing_packages/aliased"
-	funccollision2 "mapgenie/test/resolves_name_collisions_when_importing_packages/funccollision"
-	"mapgenie/test/resolves_name_collisions_when_importing_packages/imported"
-	typecollision2 "mapgenie/test/resolves_name_collisions_when_importing_packages/typecollision"
-	varcollision2 "mapgenie/test/resolves_name_collisions_when_importing_packages/varcollision"
+	"github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/aliased"
+	funccollision2 "github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/funccollision"
+	"github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/imported"
+	typecollision2 "github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/typecollision"
+	varcollision2 "github.com/i512/mapgenie/test/resolves_name_collisions_when_importing_packages/varcollision"
 )
 
 type A struct {

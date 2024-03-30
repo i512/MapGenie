@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	"github.com/i512/mapgenie/analysis"
+	"github.com/i512/mapgenie/changes"
+	"github.com/i512/mapgenie/pkg/log"
 	"github.com/urfave/cli/v2"
-	"mapgenie/analysis"
-	"mapgenie/changes"
-	"mapgenie/pkg/log"
 	"os"
 )
 

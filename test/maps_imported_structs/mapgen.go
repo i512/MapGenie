@@ -1,6 +1,6 @@
 package maps_imported_structs
 
-import "mapgenie/test/maps_imported_structs/imported/b"
+import "github.com/i512/mapgenie/test/maps_imported_structs/imported/b"
 
 // MapAB map this pls
 func MapAB(input A) b.B {

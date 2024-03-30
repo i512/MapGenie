@@ -2,8 +2,8 @@ package uses_local_providers
 
 import (
 	"fmt"
+	"github.com/i512/mapgenie/pkg/ptr"
 	"github.com/stretchr/testify/assert"
-	"mapgenie/pkg/ptr"
 	"testing"
 )
 
