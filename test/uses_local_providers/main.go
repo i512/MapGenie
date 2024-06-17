@@ -22,7 +22,7 @@ func BytesToInt(b []byte) int {
 // StrValueWithDefault magic provider
 func StrValueWithDefault(s *string) string {
 	if s == nil {
-		return "default"
+		return "default_providers"
 	}
 
 	return *s
